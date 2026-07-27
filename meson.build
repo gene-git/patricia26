@@ -44,6 +44,9 @@ d_bin = get_option('bindir')
 d_man = get_option('mandir')
 d_share = get_option('datadir')
 
+#
+# Compile / Link Options: Common
+#
 cpu_level = get_option('cpu_level')
 if cpu_level == 'x86-64-v3'
   cpu_cflags = ['-march=x86-64-v3', '-mtune=generic']
@@ -51,21 +54,12 @@ else
   cpu_cflags = ['-march=x86-64', '-mtune=generic']
 endif
 
-if get_option('hardened_export')
-  visibility_cflags = ['-fvisibility=hidden']
-else
-  visibility_cflags = ['-fvisibility=default']
+optimized = false
+if get_option('optimization') not in ['0', 'g']
+  optimized = true
 endif
 
-#
-# cython generates code with lot reused variables, dodgy conversions etc.
-# To keep the compile logs down we keep the aggresive build flags for the
-# base code, but then when focus on python turn them off
-#  -Wshadow
-#  -Wconversion
-#  -Wpedantic
-#
-my_cflags = [
+cflags_common = [
   ## General
   '-D_GNU_SOURCE',
   '-pipe',                              # Speeds up compilation
@@ -79,75 +73,63 @@ my_cflags = [
   ## Control Flow & Runtime Integrity
   '-mshstk',                            # Intel Shadow Stack protection
   '-fcf-protection',                    # Control-flow enforcement
-  ## Aggressive Diagnostic Hardening
-  '-Wshadow',                          # Warn if local variable/decl shadows another 
-  '-Wconversion',                       # Warn about type conversions that may alter value
+  ## Diagnostic Hardening
   '-Wformat=2',                         # Warn about format/args mismatch printf, scanf etc
   '-Werror=format-security',            # Also warn about insecure printf format strings
-] + cpu_cflags + visibility_cflags
+]
 
-opt_level = get_option('optimization')
-if opt_level not in ['0', 'g', 'default']
-  my_cflags += ['-Wp,-D_FORTIFY_SOURCE=3']
+cflags_common += cpu_cflags
+
+ldflags_common = [
+  '-Wl,--as-needed',                    # Limit shared to 'as needed'
+  '-Wl,-z,relro',                       # Mark relocation tables read-only
+  '-Wl,-z,now',                         # Force immediate binding (Full RELRO)
+  '-Wl,-z,noexecstack',                 # Strictly enforce non-executable stack
+  '-Wl,-z,pack-relative-relocs',        # Optimize layout with DT_RELR packing
+]
+
+
+#
+# Compile / Link Options: libpatricia26
+#
+my_cflags = cflags_common + [
+  '-fvisibility=hidden',                # Only explicitly exported symbols in shared lib symbol table
+  '-Wshadow',                           # Warn if local variable/decl shadows another 
+  '-Wconversion',                       # Warn about type conversions that may alter value
+] 
+
+if optimized
+  my_cflags += ['-D_FORTIFY_SOURCE=3']
 endif
 
 if get_option('analyzer')
   my_cflags += ['-fanalyzer']
 endif
 
-# link-time hardening
-my_ldflags = [
-  '-Wl,--as-needed',                    # Limit shared to 'as needed'
-  '-Wl,-z,relro',                       # Mark relocation tables read-only
-  '-Wl,-z,now',                         # Force immediate binding (Full RELRO)
-  '-Wl,-z,noexecstack',                 # Strictly enforce non-executable stack
-  '-Wl,-z,pack-relative-relocs',        # Optimize layout with DT_RELR packing
+my_ldflags = ldflags_common + [
   '-Wl,-z,defs',                        # Catch unresolved symbols at link time, not at runtime
 ]
-#add_project_arguments(my_cflags, language: 'c')
-#add_project_link_arguments(my_ldflags, language: 'c')
+
+
 #
-#-
-# Python module
-# - compile / linker options
+# Compile / Link Options: Cython Patrici26
 #
-py_cflags = [
-  ## General
-  '-D_GNU_SOURCE',
-  '-pipe',                              # Speeds up compilation
-  '-fno-plt',                           # Optimization for shared library calls
-  '-Wmissing-prototypes',               # Warn for global function missing prototype decl
-  ## Memory Protections
-  '-fstack-protector-strong',           # Protect function calls with stack canaries
-  '-fstack-clash-protection',           # Prevents stack-clash exploits
-  '-ftrivial-auto-var-init=zero',       # Eliminate uninitialized stack memory leaks
-  '-fzero-call-used-regs=used-gpr',     # Wipe general registers before returning
-  ## Control Flow & Runtime Integrity
-  '-mshstk',                            # Intel Shadow Stack protection
-  '-fcf-protection',                    # Control-flow enforcement
-  # disable these for cython code
+# cython generates code with lot reused variables, dodgy conversions etc.
+# To keep the compile logs down we keep the aggresive build flags for the
+# base code, but for c-code output by Cython ease up some.
+#
+py_cflags = cflags_common + [
   '-Wno-shadow',                        # cython has lots of variable names reused
   '-Wno-conversion',                    # its loosy with type conversions - leave on?
   '-Wno-pedantic',                      # its loosy with type conversions - leave on?
   '-Wno-unused-function',
-  ## Aggressive Diagnostic Hardening
-  '-Wformat=2',                         # Warn about format/args mismatch printf, scanf etc
-  '-Werror=format-security',            # Also warn about insecure printf format strings
-] + cpu_cflags
-
-opt_level = get_option('optimization')
-if opt_level not in ['0', 'g', 'default']
-  py_cflags += ['-Wp,-D_FORTIFY_SOURCE=3']
-endif
-
-py_ldflags = [
-  '-Wl,--as-needed',                    # Limit shared to 'as needed'
-  '-Wl,-z,relro',                       # Mark relocation tables read-only
-  '-Wl,-z,now',                         # Force immediate binding (Full RELRO)
-  '-Wl,-z,noexecstack',                 # Strictly enforce non-executable stack
-  '-Wl,-z,pack-relative-relocs',        # Optimize layout with DT_RELR packing
 ]
 
+if optimized
+  py_cflags += ['-D_FORTIFY_SOURCE=3']
+endif
+
+py_ldflags = ldflags_common 
 
 #
 # Python init

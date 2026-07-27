@@ -7,15 +7,6 @@ option('cpu_level', type: 'combo', choices: ['baseline', 'x86-64-v3'], value: 'b
                'best to use baseline instead.'
 )
 
-option('hardened_export', type: 'boolean', value: true,
-  description: 'Build sd_boot_lib with -fvisibility=hidden, exporting only the ' +
-               'public API. Requires the public API in the headers to be annotated ' +
-               'with an explicit export attribute (e.g. SD_BOOT_EXPORT) - not yet ' +
-               'done in this codebase, so leave this false until that work lands, ' +
-               'or the shared library will fail to export its API and linking ' +
-               'against sd_boot_dep will break.'
-)
-
 option('analyzer', type: 'boolean', value: false,
   description: 'Build with -fanalyzer. Development / CI. Use -fanalyzer to catch' +
                'use-after-free/double-free/null-deref. Slow and can be noisy.'

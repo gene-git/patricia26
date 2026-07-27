@@ -6,12 +6,18 @@ Tags
 
 .. code-block:: text
 
-	0.5.0 (2026-07-21) -> 1.0.2 (2026-07-27)
-	71 commits.
+	0.5.0 (2026-07-21) -> 1.0.3 (2026-07-27)
+	72 commits.
 
 Commits
 =======
 
+
+* 2026-07-27  : **1.0.3**
+
+.. code-block:: text
+
+              - Simplify meson.build using common compile and linker options for patricia26 library and the cython c-code
 
 * 2026-07-27  : **1.0.2**
 
