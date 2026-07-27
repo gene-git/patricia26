@@ -6,14 +6,27 @@ Tags
 
 .. code-block:: text
 
-	0.5.0 (2026-07-21) -> 1.0.0, (2026-07-27)
-	68 commits.
+	0.5.0 (2026-07-21) -> 1.0.2 (2026-07-27)
+	71 commits.
 
 Commits
 =======
 
 
-* 2026-07-27  : **1.0.0,**
+* 2026-07-27  : **1.0.2**
+
+.. code-block:: text
+
+              - Actually add the uv options!
+
+* 2026-07-27  : **1.0.1**
+
+.. code-block:: text
+
+              - Add options to uv build --wheel in PKGBUILD
+              - Readme typo
+
+* 2026-07-27  : **1.0.0**
 
 .. code-block:: text
 

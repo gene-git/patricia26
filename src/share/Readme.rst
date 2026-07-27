@@ -62,7 +62,7 @@ There is a tentative Python module, *Patricia_int*, that uses integers / *ipaddr
 instead of IP and CIDR strings. However, this version is significantly slower, probably due to
 Python not using simple 32 and 128 bit number representations that can be mappped directly
 to C, thus necessitating additional conversion overhead that inflicts a pretty big performance penalty. 
-Consuquently, we're not using this class and so it has not had the usage and testing that
+Consequently, we're not using this class and so it has not had the usage and testing that
 *Patricia26* class has.
 
 Patricia26 Python class
