@@ -1,0 +1,38 @@
+[project]
+name = "patricia26"
+version = "0.1.0"
+description = "Fork of Dave Plonka's patricia library together with an optimized Python wrapper module"
+readme = "Readme.rst"
+requires-python = ">=3.14"
+
+authors = [
+    { name = "Dave Plonka", email = "plonka@doit.wisc.edu" },
+    { name = "Gene C", email = "arch@sapience.com" },
+]
+
+license = "LGPL-3.0-or-later AND UMich-Merit"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Networking",
+]
+
+[build-system]
+requires = ["meson-python", "cython >= 3.0", "meson", "ninja"]
+build-backend = "mesonpy"
+
+[tool.uv]
+package = true
+
+#
+# meson.build installs licenses where they are needed
+# - avoid duplicates in the python module dir
+# - make sure libpatricia26.so is not installed in 
+#   usr/lib/python3.14/site-packages/.patricia26.mesonp
+#
+[tool.meson-python.args]
+install = ["--tags=python-module"]
+
+[tool.cython-lint]
+max-line-length = 110
