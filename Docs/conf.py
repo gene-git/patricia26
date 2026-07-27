@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath("./stubs"))
 
 project = "patricia26"
 author = 'Gene C'
-release = "0.10.0"
+release = "0.11.0"
 latex_engine = 'xelatex'
 
 extensions = [

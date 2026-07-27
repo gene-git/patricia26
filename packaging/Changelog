@@ -1,9 +1,12 @@
 -------------------------------------------------------
  Changelog    : patricia26
- Tags         :  ➙ 0.10.0
-              :  ➙ 2026-07-27
+ Tags         : 0.10.0, origin/master, origin/HEAD ➙ 0.11.0
+              : 2026-07-27 ➙ 2026-07-27
               : 6 tags. See Docs for full changelog
 -------------------------------------------------------
 
- 2026-07-27   : 0.10.0
+ 2026-07-27   : 0.11.0
+              - Add missing meson.options file to repo
+
+ 2026-07-27   : 0.10.0, origin/master, origin/HEAD
               - Add meson.build to repo
