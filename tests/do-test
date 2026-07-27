@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+
+#echo "==> Run smoke test"
+#../src/build/release/smoke_test
+here=$(/usr/bin/pwd)
+pushd ../ 
+./scripts/do-install "build/pkg"
+
+echo "  ==> Smoke test"
+export PYTHONPATH=build/pkg/usr/lib/python3.14/site-packages
+export LD_LIBRARY_PATH=build/pkg/usr/lib
+/usr/bin/meson test -C build/release
+
+cd "$here"
+echo "  ==> python"
+export PYTHONPATH=../build/pkg/usr/lib/python3.14/site-packages
+export LD_LIBRARY_PATH=../build/pkg/usr/lib
+
+uv run pytest -v -s
+

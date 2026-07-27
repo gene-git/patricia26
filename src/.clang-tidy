@@ -1,0 +1,27 @@
+#
+# Temporarily remove 
+# -misc-include-cleaner
+# -cppcoreguidelines-avoid-magic-numbers,
+#
+Checks: '*,
+  bugprone-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  clang-diagnostic-unused-variable,
+  clang-diagnostic-format,
+  -misc-use-internal-linkage,
+  -llvmlibc-restrict-system-libc-headers,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -android-cloexec-fopen,
+  -altera-unroll-loops,
+  -altera-id-dependent-backward-branch,
+  -altera-struct-pack-align,
+  -bugprone-suspicious-realloc-usage,
+  -bugprone-easily-swappable-parameters,
+  -warnings-as-errors,
+  -llvm-header-guard,
+  -readability-identifier-length,
+  -misc-include-cleaner,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-*' 

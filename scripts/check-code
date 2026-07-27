@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+
+
+#
+# Python
+#
+uv run cython-lint src/python/*.pyx
+
+# for html report
+# uv run cython -a src/python/*.pyx
+
+
+#
+# C 
+#
+/usr/bin/cppcheck src/patricia26/*.[ch]
+/usr/bin/clang-tidy -p build/release src/patricia26/*.[ch]

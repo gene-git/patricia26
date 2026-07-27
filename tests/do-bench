@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+#
+# Benchmark patricia26 and pytricia
+#
+
+iterations=10000000
+if [[ "$1" != "" ]] ; then
+    iterations="$1"
+fi
+
+#
+# Patricia
+#
+echo "----------------------"
+
+export PYTHONPATH=../build/pkg/usr/lib/python3.14/site-packages
+export LD_LIBRARY_PATH=../build/pkg/usr/lib
+
+/usr/bin/python benchmark_patricia26.py "$iterations"
+
+#
+# PyTricia
+#
+PYTHONPATH=
+LD_LIBRARY_PATH=
+echo "----------------------"
+/usr/bin/python benchmark_pytricia.py "$iterations"

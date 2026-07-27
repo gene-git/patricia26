@@ -1,0 +1,6 @@
+build/
+dist/
+Docs/_build
+./tests-dev
+__pycache__
+
