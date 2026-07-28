@@ -1,6 +1,6 @@
 # docs/Makefile
 SPHINXOPTS    ?=
-SPHINXBUILD   ?= uv run sphinx-build
+SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
 

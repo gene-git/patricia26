@@ -6,12 +6,18 @@ Tags
 
 .. code-block:: text
 
-	0.5.0 (2026-07-21) -> 1.0.4 (2026-07-28)
-	78 commits.
+	0.5.0 (2026-07-21) -> 1.1.0 (2026-07-28)
+	79 commits.
 
 Commits
 =======
 
+
+* 2026-07-28  : **1.1.0**
+
+.. code-block:: text
+
+              - Actually use 1.1.0 as the release tag instead of 1.0.4
 
 * 2026-07-28  : **1.0.4**
 
