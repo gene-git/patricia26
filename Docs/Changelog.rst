@@ -6,12 +6,27 @@ Tags
 
 .. code-block:: text
 
-	0.5.0 (2026-07-21) -> 1.0.3 (2026-07-27)
-	72 commits.
+	0.5.0 (2026-07-21) -> 1.0.4 (2026-07-28)
+	78 commits.
 
 Commits
 =======
 
+
+* 2026-07-28  : **1.0.4**
+
+.. code-block:: text
+
+              - **1.1.0**
+              - remove old_xxx
+              - tidy up some cython code
+              - meson.build: remove commented code that was moved to src/python/meson.build
+              - fix goofy copyright text in a couple files
+ 2026-07-27   ⋯
+
+.. code-block:: text
+
+              - Running test - remove uv.lock after completion
 
 * 2026-07-27  : **1.0.3**
 

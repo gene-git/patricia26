@@ -2,6 +2,22 @@
 patricia26
 ==========
 
+Recent Changes
+==============
+
+**1.1.0**
+
+* C-Code
+  - network family now defined as posix sa_family_t
+  - bitlen changed to uint8_t bitlen (holds ipv4/ipv6 prefix lengths <= 128)
+  - prefix_toa2x(): ipv4 block now uses inet_ntop() same as ipv6.
+    Seems to also be faster.
+  - tidying
+
+* Python:
+  - synchronize with library changes
+  - tidying
+
 Overview
 ========
 

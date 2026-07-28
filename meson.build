@@ -1,7 +1,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
-# Copyright (c) 2026 Your Name <arch@sapience.com>
+# Copyright (c) 2026 Gene C <arch@sapience.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published
@@ -175,41 +175,6 @@ smoke_test = executable('smoke_test',
 test('smoke', smoke_test,
   args: [],
   )
-
-
-
-#py.extension_module(
-#  '_patricia26',
-#  sources: [
-#    'src/patricia26/patricia26.pyx',
-#  ],
-#  c_args: py_cflags,
-#  cython_args: cython_args,
-#  dependencies: [py_dep, patricia26_dep],
-#  include_directories: inc_dir,
-#  module_name: 'patricia26._patricia26',
-#  link_args: py_ldflags,
-#  link_with: patricia26_lib,
-#  subdir: 'patricia26',
-#  install: true,
-#)
-
-#py.extension_module(
-#  '_patricia26_int',
-#  sources: [
-#    'src/patricia26/patricia26_int.pyx',
-#  ],
-#  c_args: py_cflags,
-#  cython_args: cython_args,
-#  dependencies: [py_dep, patricia26_dep],
-#  include_directories: inc_dir,
-#  module_name: 'patricia26._patricia26_int',
-#  link_args: py_ldflags,
-#  link_with: patricia26_lib,
-##  subdir: 'patricia26',
-#  install: true,
-#)
-
 
 
 #

@@ -41,9 +41,15 @@
 # cython: initializedcheck=False
 # patricia26.pyx - High-Speed String/CIDR Engine
 
-from libc.string cimport strchr, strcpy, memcpy
+from libc.string cimport strchr, memcpy
 from libc.stdlib cimport atoi
+from libc.stdint cimport uint8_t
+
 from cpython.ref cimport Py_INCREF, Py_DECREF
+
+cdef extern from "<sys/socket.h>" nogil:
+    int AF_INET
+    int AF_INET6
 
 cdef extern from "Python.h":
     const char* PyUnicode_AsUTF8AndSize(object obj, Py_ssize_t* size) except NULL
@@ -53,9 +59,11 @@ cdef extern from "<arpa/inet.h>" nogil:
     unsigned int htonl(unsigned int hostlong)
 
 cdef extern from "patricia.h":
+    ctypedef unsigned short sa_family_t
     ctypedef struct prefix_t:
-        unsigned short family
-        unsigned short bitlen
+        sa_family_t family
+        uint8_t bitlen
+        uint8_t pad
         int ref_count
         void* add
 
@@ -72,18 +80,21 @@ cdef extern from "patricia.h":
         int frozen
         patricia_node_t* head
 
-    patricia_tree_t* New_Patricia(int maxbits)
-    void Destroy_Patricia(patricia_tree_t* patricia, void (*data_free)(void*) noexcept)
-    patricia_node_t* patricia_lookup(patricia_tree_t* patricia, prefix_t* prefix)
-    patricia_node_t* patricia_search_best(patricia_tree_t* patricia, prefix_t* prefix)
-    patricia_node_t* patricia_search_exact(patricia_tree_t* patricia, prefix_t* prefix)
-    void patricia_remove(patricia_tree_t* patricia, patricia_node_t* node)
-    char* prefix_toa2x(prefix_t* prefix, char* buff, int with_len)
+    patricia_tree_t* New_Patricia(int maxbits) nogil
+    void Destroy_Patricia(patricia_tree_t* patricia, void (*data_free)(void*) noexcept nogil) nogil
+    patricia_node_t* patricia_lookup(patricia_tree_t* patricia, prefix_t* prefix) nogil
+    patricia_node_t* patricia_search_best(patricia_tree_t* patricia, prefix_t* prefix) nogil
+    patricia_node_t* patricia_search_exact(patricia_tree_t* patricia, prefix_t* prefix) nogil
+    void patricia_remove(patricia_tree_t* patricia, patricia_node_t* node) nogil
+    char* prefix_toa2x(prefix_t* prefix, char* buff, int with_len) nogil
 
 cdef void dec_python_ref(void* data) noexcept with gil:
     if data != NULL:
         Py_DECREF(<object>data)
 
+cdef extern from "<unistd.h>" nogil:
+    long _SC_NPROCESSORS_ONLN
+    long sysconf(int name)
 
 cdef class Patricia26:
     cdef patricia_tree_t* _tree_v4
@@ -135,87 +146,69 @@ cdef class Patricia26:
         return c_str.decode('utf-8')
 
     cdef inline patricia_node_t* _parse_and_find(self, object key, bint exact) noexcept:
-        """
-        Unified internal routing parser. Completely exception-free.
-        """
         cdef prefix_t prefix
         cdef Py_ssize_t string_size
 
+        # Standardize input to a string
         if not isinstance(key, str):
             key = str(key)
 
         cdef const char* p = PyUnicode_AsUTF8AndSize(key, &string_size)
-
         if string_size == 0 or string_size >= 64:
             return NULL
 
-        cdef bint is_v6 = (strchr(p, 58) != NULL)
-        cdef unsigned long long v4_val, part
-        cdef unsigned int v4_final_val
-        cdef int dots, bitlen
+        # Address family 
+        cdef bint is_v6 = (strchr(p, b':') != NULL)
+        cdef int max_bits = 128 if is_v6 else 32
+        cdef int bitlen = max_bits
+
+        # Safe stack memory replication and null-termination
         cdef char c_buf[64]
-        cdef char* slash_pos
+        memcpy(c_buf, p, string_size)
+        c_buf[string_size] = 0
 
-        if not is_v6:
-            v4_val = 0
-            part = 0
-            dots = 0
-            bitlen = 32
+        # Extract and validate CIDR bit length segment
+        cdef char* slash_pos = strchr(c_buf, b'/')
+        cdef char* mask_str
 
-            while p[0] != 0 and p[0] != 47:
-                if p[0] == 46:
-                    v4_val = (v4_val << 8) | part
-                    part = 0
-                    dots += 1
+        if slash_pos != NULL:
+            slash_pos[0] = 0  # Truncate string to isolate raw IP address
+            mask_str = slash_pos + 1
 
-                else:
-                    part = part * 10 + <unsigned long long>(p[0] - 48)
-                p += 1
-
-            v4_val = (v4_val << 8) | part
-
-            if dots != 3 or v4_val > 0xFFFFFFFF or part > 255:
+            # Guard : Trap empty trailing slash strings like "10.0.0.0/"
+            if mask_str[0] == 0:
                 return NULL
 
-            if p[0] == 47:
-                p += 1
-                bitlen = 0
-
-                while p[0] != 0:
-                    bitlen = bitlen * 10 + <int>(p[0] - 48)
-                    p += 1
-
-                if bitlen > 32:
+            # validation: Ensure every character following the slash is a pure numeric digit
+            # (prevents malicious or malformed alpha-strings from defaulting to 0)
+            while mask_str[0] != 0:
+                if not (b'0' <= <unsigned char>mask_str[0] <= b'9'):
                     return NULL
+                mask_str += 1
 
-            v4_final_val = htonl(<unsigned int>v4_val)
-            memcpy(&prefix.add, &v4_final_val, 4)
+            # convert validated numeric text block to an integer
+            bitlen = atoi(slash_pos + 1)
 
-            prefix.family = 2
-            prefix.bitlen = bitlen
+        # network translation and mask checks
+        if bitlen > max_bits:
+            return NULL
 
-            if exact or bitlen < 32:
-                return patricia_search_exact(self._tree_v4, &prefix)
-            return patricia_search_best(self._tree_v4, &prefix)
-
-        else:
-            memcpy(c_buf, p, string_size)
-            c_buf[string_size] = 0
-            slash_pos = strchr(c_buf, 47)
-
-            if slash_pos != NULL:
-                slash_pos[0] = 0
-                bitlen = <unsigned int>atoi(slash_pos + 1)
-            else:
-                bitlen = 128
-            if inet_pton(10, c_buf, <void*>&prefix.add) <= 0 or bitlen > 128:
+        if is_v6:
+            if inet_pton(AF_INET6, c_buf, <void*>&prefix.add) <= 0:
                 return NULL
-
-            prefix.family = 10
+            prefix.family = AF_INET6
             prefix.bitlen = bitlen
             if exact or bitlen < 128:
                 return patricia_search_exact(self._tree_v6, &prefix)
             return patricia_search_best(self._tree_v6, &prefix)
+        else:
+            if inet_pton(AF_INET, c_buf, <void*>&prefix.add) <= 0:
+                return NULL
+            prefix.family = AF_INET
+            prefix.bitlen = bitlen
+            if exact or bitlen < 32:
+                return patricia_search_exact(self._tree_v4, &prefix)
+            return patricia_search_best(self._tree_v4, &prefix)
 
     def __getitem__(self, object key):
         cdef patricia_node_t* node = self._parse_and_find(key, False)
@@ -320,7 +313,6 @@ cdef class Patricia26:
         return child_prefixes
 
     def __setitem__(self, str key, object value):
-
         if self._tree_v4.frozen:
             raise RuntimeError("Cannot modify a frozen Patricia26 tree.")
 
@@ -330,70 +322,48 @@ cdef class Patricia26:
         cdef const char* p = PyUnicode_AsUTF8AndSize(key, &string_size)
 
         if string_size == 0 or string_size >= 64:
-            raise ValueError("Invalid prefix tracking boundaries")
+            raise ValueError(key)
 
-        cdef bint is_v6 = (strchr(p, 58) != NULL)
-        cdef unsigned int v4_val, part
-        cdef int dots, bitlen
+        cdef bint is_v6 = (strchr(p, b':') != NULL)
+        cdef int max_bits = 128 if is_v6 else 32
+        cdef int bitlen = max_bits
+
         cdef char c_buf[64]
-        cdef char* slash_pos
+        memcpy(c_buf, p, string_size)
+        c_buf[string_size] = 0
 
-        if not is_v6:
-            v4_val = 0
-            part = 0
-            dots = 0
-            bitlen = 32
+        cdef char* slash_pos = strchr(c_buf, b'/')
+        cdef char* mask_str
 
-            while p[0] != 0 and p[0] != 47:
-                if p[0] == 46:
-                    v4_val = (v4_val << 8) | part
-                    part = 0
-                    dots += 1
-                else:
-                    part = part * 10 + <unsigned int>(p[0] - 48)
-                p += 1
+        if slash_pos != NULL:
+            slash_pos[0] = 0
+            mask_str = slash_pos + 1
 
-            v4_val = (v4_val << 8) | part
-
-            if dots != 3:
+            if mask_str[0] == 0:
                 raise ValueError(key)
 
-            if p[0] == 47:
-                p += 1
-                bitlen = 0
-                while p[0] != 0:
-                    bitlen = bitlen * 10 + <unsigned int>(p[0] - 48)
-                    p += 1
-
-                if bitlen > 32:
+            while mask_str[0] != 0:
+                if not (b'0' <= <unsigned char>mask_str[0] <= b'9'):
                     raise ValueError(key)
+                mask_str += 1
 
-            v4_val = htonl(v4_val)
-            memcpy(&prefix.add, &v4_val, 4)
+            bitlen = atoi(slash_pos + 1)
 
-            prefix.family = 2
-            prefix.bitlen = bitlen
+        if bitlen > max_bits:
+            raise ValueError(key)
 
-            node = patricia_lookup(self._tree_v4, &prefix)
-
-        else:
-            memcpy(c_buf, p, string_size)
-            c_buf[string_size] = 0
-            slash_pos = strchr(c_buf, 47)
-
-            if slash_pos != NULL:
-                slash_pos[0] = 0
-                bitlen = <unsigned int>atoi(slash_pos + 1)
-            else:
-                bitlen = 128
-
-            if inet_pton(10, c_buf, <void*>&prefix.add) <= 0 or bitlen > 128:
+        if is_v6:
+            if inet_pton(AF_INET6, c_buf, <void*>&prefix.add) <= 0:
                 raise ValueError(key)
-
-            prefix.family = 10
+            prefix.family = AF_INET6
             prefix.bitlen = bitlen
-
             node = patricia_lookup(self._tree_v6, &prefix)
+        else:
+            if inet_pton(AF_INET, c_buf, <void*>&prefix.add) <= 0:
+                raise ValueError(key)
+            prefix.family = AF_INET
+            prefix.bitlen = bitlen
+            node = patricia_lookup(self._tree_v4, &prefix)
 
         if node == NULL:
             raise RuntimeError("Unable to expand trie slot mappings.")
@@ -401,7 +371,6 @@ cdef class Patricia26:
         if node.data != NULL:
             Py_DECREF(<object>node.data)
         Py_INCREF(value)
-
         node.data = <void*>value
 
     def iter_v4(self):
@@ -495,176 +464,139 @@ cdef class Patricia26:
         cdef Py_ssize_t string_size = 0
         cdef const char* p = NULL
         cdef bint is_v6 = False
-        cdef unsigned int v4_val = 0
-        cdef unsigned int part = 0
-        cdef int dots = 0
+        cdef int max_bits = 0
         cdef int bitlen = 0
         cdef char* slash_pos = NULL
+        cdef char* mask_str = NULL
         cdef char c_buf[64]
 
         try:
             p = PyUnicode_AsUTF8AndSize(ip_str, &string_size)
-
             if string_size == 0 or string_size >= 64:
                 return (None, None)
 
-            is_v6 = (strchr(p, 58) != NULL)
+            is_v6 = (strchr(p, b':') != NULL)
+            max_bits = 128 if is_v6 else 32
+            bitlen = max_bits
 
-            if not is_v6:
-                v4_val = 0
-                part = 0
-                dots = 0
-                bitlen = 32
+            memcpy(c_buf, p, string_size)
+            c_buf[string_size] = 0
 
-                while p[0] != 0 and p[0] != 47:
-                    if p[0] == 46:
-                        v4_val = (v4_val << 8) | part
-                        part = 0
-                        dots += 1
-                    else:
-                        part = part * 10 + <unsigned int>(p[0] - 48)
-                    p += 1
+            slash_pos = strchr(c_buf, b'/')
+            if slash_pos != NULL:
+                slash_pos[0] = 0
+                mask_str = slash_pos + 1
 
-                v4_val = (v4_val << 8) | part
-
-                if dots != 3:
+                if mask_str[0] == 0:
                     return (None, None)
 
-                if p[0] == 47:
-                    p += 1
-                    bitlen = 0
+                while mask_str[0] != 0:
+                    if not (b'0' <= <unsigned char>mask_str[0] <= b'9'):
+                        return (None, None)
+                    mask_str += 1
 
-                    while p[0] != 0:
-                        bitlen = bitlen * 10 + <unsigned int>(p[0] - 48)
-                        p += 1
+                bitlen = atoi(slash_pos + 1)
 
-                v4_val = htonl(v4_val)
-                memcpy(&prefix.add, &v4_val, 4)
+            if bitlen > max_bits:
+                return (None, None)
 
-                prefix.family = 2
-                prefix.bitlen = bitlen
-
-                node = patricia_search_best(self._tree_v4, &prefix)
-
-            else:
-                memcpy(c_buf, p, string_size)
-                c_buf[string_size] = 0
-
-                slash_pos = strchr(c_buf, 47)
-                if slash_pos != NULL:
-                    slash_pos[0] = 0
-                    bitlen = <unsigned int>atoi(slash_pos + 1)
-                else:
-                    bitlen = 128
-
-                if inet_pton(10, c_buf, <void*>&prefix.add) <= 0 or bitlen > 128:
+            if is_v6:
+                if inet_pton(AF_INET6, c_buf, <void*>&prefix.add) <= 0:
                     return (None, None)
-
-                prefix.family = 10
+                prefix.family = AF_INET6
                 prefix.bitlen = bitlen
-
                 node = patricia_search_best(self._tree_v6, &prefix)
+            else:
+                if inet_pton(AF_INET, c_buf, <void*>&prefix.add) <= 0:
+                    return (None, None)
+                prefix.family = AF_INET
+                prefix.bitlen = bitlen
+                node = patricia_search_best(self._tree_v4, &prefix)
 
             if node == NULL or node.data == NULL:
                 return (None, None)
 
             return (self._prefix_to_str(&node.prefix), <object>node.data)
 
-        except:
+        except Exception:
             return (None, None)
 
     def bulk_lookup(self, list ip_list):
-        """Hyper-optimized batch query executing branchless, unmixed parallel loops."""
+        """Hyper-optimized batch query executing branchless, unmixed single-pass loops."""
         cdef Py_ssize_t list_len = len(ip_list)
-
         if list_len == 0:
             return []
 
         cdef prefix_t prefix
         cdef patricia_node_t* node
         cdef Py_ssize_t idx, string_size
-        cdef const char* internal_py_ptr
         cdef const char* p
-        cdef unsigned int v4_val, part
-        cdef int dots, bitlen
+        cdef unsigned int v4_val
+        cdef int bitlen
+        cdef const char* slash_pos
         cdef char c_buf[64]
 
-        results = [None] * list_len
+        # Allocate final list directly in a single pass
+        results = []
 
-        # Peak index 0 to choose destination tree route instantly
-        internal_py_ptr = PyUnicode_AsUTF8AndSize(ip_list[0], &string_size)
-        cdef bint is_v6_batch = (strchr(internal_py_ptr, b':') != NULL)
+        # Peek index 0 safely to establish the batch route
+        p = PyUnicode_AsUTF8AndSize(ip_list[0], &string_size) if list_len > 0 else NULL
+        cdef bint is_v6_batch = (p != NULL and strchr(p, b':') != NULL)
 
         if not is_v6_batch:
-            # === PURE UNMIXED IPv4 BULK FAST-PATH ===
-            prefix.family = 2
+            # === HYPER-PERFORMANCE SINGLE-PASS IPv4 FAST-PATH ===
             for idx in range(list_len):
                 p = PyUnicode_AsUTF8AndSize(ip_list[idx], &string_size)
-
                 if string_size == 0 or string_size >= 64:
+                    results.append(None)
                     continue
 
-                v4_val = 0
-                part = 0
-                dots = 0
-                bitlen = 32
-
-                while p[0] != 0 and p[0] != 47:
-                    if p[0] == 46:
-                        v4_val = (v4_val << 8) | part
-                        part = 0
-                        dots += 1
-                    else:
-                        part = part * 10 + <unsigned int>(p[0] - 48)
-                    p += 1
-
-                v4_val = (v4_val << 8) | part
-
-                if dots != 3:
+                # Run the inline C helper (replaces original raw loops)
+                if not _parse_ipv4_inline(p, &v4_val, &bitlen):
+                    results.append(None)
                     continue
 
-                if p[0] == 47:
-                    p += 1
-                    bitlen = 0
-
-                    while p[0] != 0:
-                        bitlen = bitlen * 10 + <unsigned int>(p[0] - 48)
-                        p += 1
-
-                v4_val = htonl(v4_val)
-                memcpy(&prefix.add, &v4_val, 4)
+                prefix.family = AF_INET
                 prefix.bitlen = bitlen
+                memcpy(&prefix.add, &v4_val, 4)
 
                 node = patricia_search_best(self._tree_v4, &prefix)
                 if node != NULL and node.data != NULL:
-                    results[idx] = <object>node.data
-        else:
-            # === PURE UNMIXED IPv6 BULK FAST-PATH ===
-            prefix.family = 10
-
-            for idx in range(list_len):
-                internal_py_ptr = PyUnicode_AsUTF8AndSize(ip_list[idx], &string_size)
-
-                if string_size == 0 or string_size >= 64:
-                    continue
-
-                strcpy(c_buf, internal_py_ptr)
-                p = strchr(c_buf, b'/')
-
-                if p != NULL:
-                    (<char*>p)[0] = 0
-                    bitlen = <unsigned int>atoi(p + 1)
+                    results.append(<object>node.data)
                 else:
-                    bitlen = 128
-
-                if inet_pton(10, c_buf, <void*>&prefix.add) <= 0:
+                    results.append(None)
+        else:
+            # === HYPER-PERFORMANCE SINGLE-PASS IPv6 FAST-PATH ===
+            for idx in range(list_len):
+                p = PyUnicode_AsUTF8AndSize(ip_list[idx], &string_size)
+                if string_size == 0 or string_size >= 64:
+                    results.append(None)
                     continue
 
+                memcpy(c_buf, p, string_size)
+                c_buf[string_size] = 0
+
+                bitlen = 128
+                slash_pos = strchr(c_buf, b'/')
+                if slash_pos != NULL:
+                    (<char*>c_buf)[slash_pos - c_buf] = 0
+                    bitlen = atoi(slash_pos + 1)
+                    if bitlen > 128:
+                        results.append(None)
+                        continue
+
+                prefix.family = AF_INET6
                 prefix.bitlen = bitlen
+
+                if inet_pton(AF_INET6, c_buf, <void*>&prefix.add) <= 0:
+                    results.append(None)
+                    continue
 
                 node = patricia_search_best(self._tree_v6, &prefix)
                 if node != NULL and node.data != NULL:
-                    results[idx] = <object>node.data
+                    results.append(<object>node.data)
+                else:
+                    results.append(None)
 
         return results
 
@@ -748,3 +680,37 @@ cdef class Patricia26:
         # Re-apply frozen state only if the serialized data dictated it
         if is_frozen:
             self.freeze()
+
+cdef inline bint _parse_ipv4_inline(const char* p, unsigned int* out_v4, int* out_bits) noexcept nogil:
+    cdef unsigned int v4_val = 0
+    cdef unsigned int part = 0
+    cdef int dots = 0
+    cdef int bitlen = 32
+    cdef Py_ssize_t i = 0
+
+    while p[i] != 0 and p[i] != b'/':
+        if p[i] == b'.':
+            v4_val = (v4_val << 8) | part
+            part = 0
+            dots += 1
+        else:
+            part = part * 10 + <unsigned int>(p[i] - 48)
+        i += 1
+
+    v4_val = (v4_val << 8) | part
+
+    if dots != 3:
+        return False
+
+    if p[i] == b'/':
+        i += 1
+        bitlen = 0
+        while p[i] != 0:
+            bitlen = bitlen * 10 + <unsigned int>(p[i] - 48)
+            i += 1
+        if bitlen > 32:
+            return False
+
+    out_v4[0] = htonl(v4_val)
+    out_bits[0] = bitlen
+    return True

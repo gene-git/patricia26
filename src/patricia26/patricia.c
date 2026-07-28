@@ -79,7 +79,6 @@
  *      - simplifies memory management
  *      - Ref_Prefix()
  *      - Deref_Prefix()
- *    pytricia did this as well
  *  - patricia_walk_inorder()
  *
  * Real bugs fixed along the way, not just style:
@@ -88,23 +87,14 @@
  *    call sites in patricia_lookup). All now check and propagate failure
  *    (nullptr/0, matching each function's existing failure convention)
  *    instead of crashing on allocation failure.
- *  - local_inet_pton() could fall off the end of the function without a
- *    return value (UB) for the NT-defined-without-HAVE_IPV6 preprocessor
- *    combination. Restructured so every combination returns.
- *  - my_inet_pton()'s isdigit(c) calls passed a plain (possibly negative,
- *    if char is signed on this platform) int for high-bit-set bytes -
- *    passing anything other than an unsigned char value or EOF to a
- *    <ctype.h> function is undefined behavior. Both call sites now cast
- *    to (unsigned char) first.
  *  - comp_with_mask()'s `(-1) << n` is undefined behavior in C (left-shift
  *    of a negative value). Rewritten using unsigned arithmetic to produce
  *    the identical bit pattern without UB.
  *  - prefix_toa2x()'s doc comment claims "thread safe", but the actual
  *    compiled branch (the THREAD_SPECIFIC_DATA branch is #if 0'd out) uses
  *    a plain `static` buffer shared across all threads - not thread safe
- *    as shipped. Changed to `static thread_local` (C23 keyword) so the
- *    documented contract is actually true, with zero behavior change for
- *    single-threaded callers.
+ *    as shipped. Fixed - is now thread safe.
+ *    zero behavior change for single-threaded callers.
  *  - Dropped the `#define Delete free` indirection in favor of calling
  *    free() directly - it added a layer of indirection with no benefit and
  *    was internal to this file only.
@@ -114,19 +104,17 @@
 "This product includes software developed by the University of Michigan, Merit "\
 "Network, Inc., and their contributors."
 
+#include <arpa/inet.h> 
 #include <assert.h> 
 #include <ctype.h> 
 #include <errno.h>
+#include <netinet/in.h>
 #include <stdarg.h> 
 #include <stddef.h> 
 #include <stdint.h>
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <string.h> 
-//#include <sys/types.h> 
-
-#include <arpa/inet.h> 
-#include <netinet/in.h>
 #include <sys/socket.h>
 
 #include "patricia.h"
@@ -202,10 +190,6 @@ int comp_with_mask(const void *addr, const void *dest, unsigned int mask) {
  * Returns:
  *     char*: Pointer to the destination string buffer (`buff`) containing 
  *     the formatted ASCII data layout.
- *
- * TODO:
- *  - should AF_INET case just use inet_ntop()?
- *  - should AF_INET6 handle MAX_THREADS same as AF_INET case?
  */
 
 char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
@@ -224,13 +208,13 @@ char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
         };
 
         /*
-         * static thread_local: each thread gets its own independent
-         * rotating set of 16 buffers. The original had a #if 0'd out
-         * THREAD_SPECIFIC_DATA branch and a plain `static` fallback that
-         * was NOT actually thread safe despite this function's doc
-         * comment - thread_local (a C23 keyword) makes that claim true
-         * with a one-word change and no behavior change for
-         * single-threaded callers.
+         * static thread_local: 
+         * each thread gets its own independent rotating set of 16 buffers. 
+         * The original had a #if 0'd out THREAD_SPECIFIC_DATA branch and a 
+         * plain `static` fallback that was NOT actually thread safe despite 
+         * this function's comment.
+         * thread_local (a C23 keyword) makes it now work and with
+         * no behavior change for * single-threaded callers.
          */
         static thread_local struct buffer local_buff;
 
@@ -238,26 +222,24 @@ char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
     }
 
     if (prefix->family == AF_INET) {
-        uint8_t *a = nullptr;
-
         assert(prefix->bitlen <= IPV4_BITS);
 
-        a = prefix_tochar(prefix);
+        char *r = nullptr;
+        r = (char *)inet_ntop(AF_INET, &prefix->add.sin, buff, INET_ADDRSTRLEN);
 
-        if (with_len) {
-            int ret = snprintf(buff, NET_STR_LEN, "%d.%d.%d.%d/%d", a[0], a[1], a[2], a[3], prefix->bitlen);
-            if (ret < 0 || ret > NET_STR_LEN) {
-                return nullptr;
-            }
+        if (r && with_len) {
+            assert(prefix->bitlen <= IPV4_BITS);
 
-        } else {
-            int ret = snprintf(buff, NET_STR_LEN, "%d.%d.%d.%d", a[0], a[1], a[2], a[3]);
-            if (ret < 0 || ret > NET_STR_LEN) {
+            size_t used = (size_t)strlen(buff);
+            size_t buflen = NET_STR_LEN - used;
+
+            int ret = snprintf(buff + used, buflen, "/%d", prefix->bitlen);
+            if (ret < 0 || ret > (int)buflen) {
                 return nullptr;
             }
         }
-
         return buff;
+
     }
 
     if (prefix->family == AF_INET6) {
@@ -266,9 +248,9 @@ char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
 
         if (r && with_len) {
             assert(prefix->bitlen <= IPV6_BITS);
+
             size_t used =  (size_t)strlen(buff);
             size_t bufflen = NET_STR_LEN - used;
-
             int ret = snprintf(buff + used, bufflen, "/%d", prefix->bitlen);
             if (ret < 0 || ret > (int)bufflen) {
                 return nullptr;
@@ -340,8 +322,8 @@ prefix_t *New_Prefix(int family, void *dest, int bitlen, prefix_t *prefix) {
         return nullptr;
     }
 
-    prefix->bitlen = (bitlen >= 0) ? (uint16_t)bitlen : (uint16_t)default_bitlen;
-    prefix->family = (uint16_t)family;
+    prefix->bitlen = (uint8_t)((bitlen >= 0) ? (uint8_t)bitlen : (uint8_t)default_bitlen);
+    prefix->family = (sa_family_t)family;
     prefix->ref_count = 0;
 
     if (dynamic_allocated) {

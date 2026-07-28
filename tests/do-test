@@ -16,5 +16,7 @@ echo "  ==> python"
 export PYTHONPATH=../build/pkg/usr/lib/python3.14/site-packages
 export LD_LIBRARY_PATH=../build/pkg/usr/lib
 
-uv run pytest -v -s
+/usr/bin/uv run pytest -v -s
+/usr/bin/rm -f uv.lock ../uv.lock
+
 

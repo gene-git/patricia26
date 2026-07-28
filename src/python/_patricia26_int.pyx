@@ -41,19 +41,38 @@
 # cython: initializedcheck=False
 # patricia26_int.pyx - Pure Numerical / ipaddress Tracker
 #
-from libc.string cimport memcpy
+from libc.string cimport memcpy, memset
+from libc.stdlib cimport atoi
+from libc.stdint cimport uint8_t, uint32_t
+
 from cpython.ref cimport Py_INCREF, Py_DECREF
+
+cdef extern from "<sys/socket.h>" nogil:
+    int AF_INET
+    int AF_INET6
 
 cdef extern from "<arpa/inet.h>" nogil:
     int inet_pton(int af, const char* src, void* dst)
     unsigned int htonl(unsigned int hostlong)
 
+cdef extern from "<netinet/in.h>" nogil:
+    struct in_addr:
+        uint32_t s_addr
+    struct in6_addr:
+        uint8_t s6_addr[16]
+
 cdef extern from "patricia.h":
+    ctypedef unsigned short sa_family_t
+    ctypedef union prefix_add_u:
+        in_addr sin
+        in6_addr sin6
+
     ctypedef struct prefix_t:
-        unsigned short family
-        unsigned short bitlen
+        sa_family_t family
+        uint8_t bitlen
+        uint8_t pad
         int ref_count
-        void* add
+        prefix_add_u add
 
     ctypedef struct patricia_node_t:
         prefix_t prefix
@@ -96,22 +115,6 @@ cdef class Patricia26Int:
         if self._tree_v6 != NULL:
             Destroy_Patricia(self._tree_v6, dec_python_ref)
 
-    cdef inline void _store_v6_to_prefix(self, object raw_ip_int, prefix_t* prefix) noexcept:
-        py_w0 = (raw_ip_int >> 96) & 0xFFFFFFFF
-        py_w1 = (raw_ip_int >> 64) & 0xFFFFFFFF
-        py_w2 = (raw_ip_int >> 32) & 0xFFFFFFFF
-        py_w3 = raw_ip_int & 0xFFFFFFFF
-        cdef unsigned int w0 = htonl(<unsigned int>py_w0)
-        cdef unsigned int w1 = htonl(<unsigned int>py_w1)
-        cdef unsigned int w2 = htonl(<unsigned int>py_w2)
-        cdef unsigned int w3 = htonl(<unsigned int>py_w3)
-        cdef char* dest = <char*>&prefix.add
-
-        memcpy(dest, &w0, 4)
-        memcpy(dest + 4, &w1, 4)
-        memcpy(dest + 8, &w2, 4)
-        memcpy(dest + 12, &w3, 4)
-
     cdef object _prefix_to_ipa(self, prefix_t* prefix):
         import ipaddress
         cdef char buf[64]
@@ -121,6 +124,25 @@ cdef class Patricia26Int:
             return None
         return ipaddress.ip_network(c_str.decode('utf-8'), strict=False)
 
+    cdef inline void _store_v6_to_prefix(self, object raw_ip_int, prefix_t* prefix) noexcept:
+        py_w0 = (raw_ip_int >> 96) & 0xFFFFFFFF
+        py_w1 = (raw_ip_int >> 64) & 0xFFFFFFFF
+        py_w2 = (raw_ip_int >> 32) & 0xFFFFFFFF
+        py_w3 = raw_ip_int & 0xFFFFFFFF
+
+        cdef unsigned int w0 = htonl(<unsigned int>py_w0)
+        cdef unsigned int w1 = htonl(<unsigned int>py_w1)
+        cdef unsigned int w2 = htonl(<unsigned int>py_w2)
+        cdef unsigned int w3 = htonl(<unsigned int>py_w3)
+
+        # CLEAN & SAFE: Write directly to the typed structure field names!
+        cdef char* dest = <char*>&prefix.add.sin6
+
+        memcpy(dest, &w0, 4)
+        memcpy(dest + 4, &w1, 4)
+        memcpy(dest + 8, &w2, 4)
+        memcpy(dest + 12, &w3, 4)
+
     cdef inline patricia_node_t* _parse_and_find(self, object key, bint exact) noexcept:
         """Unified native object router path wrapper. Exception free."""
         cdef prefix_t prefix
@@ -128,10 +150,13 @@ cdef class Patricia26Int:
         cdef object raw_ip_int
         cdef unsigned int v4_val
 
+        # Clear memory safely to ensure the padding byte is always zero
+        memset(&prefix, 0, sizeof(prefix_t))
+
         if hasattr(key, "version"):
             family = 10 if key.version == 6 else 2
             if hasattr(key, "prefixlen"):
-                prefix.bitlen = <unsigned int>key.prefixlen
+                prefix.bitlen = <uint8_t>key.prefixlen
                 raw_ip_int = key.network_address._ip
             else:
                 prefix.bitlen = 128 if family == 10 else 32
@@ -143,10 +168,12 @@ cdef class Patricia26Int:
         else:
             return NULL
 
-        prefix.family = family
+        prefix.family = <unsigned short>family
+
         if family == 2:
             v4_val = htonl(<unsigned int>raw_ip_int)
-            memcpy(&prefix.add, &v4_val, 4)
+            # CLEAN & SAFE: Standard structure member referencing
+            memcpy(&prefix.add.sin, &v4_val, 4)
 
             if exact or prefix.bitlen < 32:
                 return patricia_search_exact(self._tree_v4, &prefix)
@@ -156,6 +183,7 @@ cdef class Patricia26Int:
             if exact or prefix.bitlen < 128:
                 return patricia_search_exact(self._tree_v6, &prefix)
             return patricia_search_best(self._tree_v6, &prefix)
+
 
     def __getitem__(self, object key):
         cdef patricia_node_t* node = self._parse_and_find(key, False)

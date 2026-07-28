@@ -68,6 +68,7 @@
 #define PATRICIA_H
 
 #include <stdint.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 
 #include "patricia-export.h"
@@ -111,6 +112,8 @@ static inline bool addr_bit_is_set(const uint8_t *addr, unsigned int bit_index) 
 
 /* { from mrt.h */
 
+/*
+ * Unused
 typedef struct prefix4_tag {
     u_short family;		
     u_short bitlen;		
@@ -124,6 +127,7 @@ typedef struct prefix6_tag {
     int ref_count;		
     struct in6_addr sin6;
 } prefix6_t;
+*/
 
 
 /**
@@ -142,10 +146,13 @@ typedef struct prefix6_tag {
  *     add.sin6 (struct in6_addr): Raw binary structure representing a 128-bit IPv6 address.
  *
  * Support for IPv6 is no longer #if defined away via HAVE_IPV6    
+ * bitlen is now 1 byte - long enough for ipv4 and ipv6. 
+ * Add 1 byte padding to keep struct explicitly aligned on even byte boundary
  */
 typedef struct prefix_tag {
-    u_short family;		
-    u_short bitlen;	
+    sa_family_t family;		
+    uint8_t bitlen;	
+    uint8_t pad;
     int ref_count;
     union {
 		struct in_addr sin;
@@ -219,7 +226,6 @@ enum { PATRICIA_MAXBITS = 128U };
  * Private function declarations
  */
 int comp_with_mask(const void *addr, const void *dest, unsigned int mask);
-int local_inet_pton(int af, const char *src, void *dst);
 patricia_node_t * patricia_search_best2 (patricia_tree_t *patricia, prefix_t *prefix, int inclusive);
 void patricia_process (patricia_tree_t *patricia, void_fn_2_t func);
 
@@ -286,7 +292,6 @@ PATRICIA_EXPORT patricia_node_t *patricia_search_best (patricia_tree_t *patricia
 PATRICIA_EXPORT patricia_node_t *patricia_search_exact (patricia_tree_t *patricia, prefix_t *prefix);
 PATRICIA_EXPORT char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len);
 PATRICIA_EXPORT void Destroy_Patricia (patricia_tree_t *patricia, void_fn_t func);
-PATRICIA_EXPORT int my_inet_pton(int af, const char *src, void *dst);
 PATRICIA_EXPORT void patricia_remove (patricia_tree_t *patricia, patricia_node_t *node);
 PATRICIA_EXPORT void Clear_Patricia (patricia_tree_t *patricia, void_fn_t func);
 
