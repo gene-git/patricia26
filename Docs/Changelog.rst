@@ -6,12 +6,24 @@ Tags
 
 .. code-block:: text
 
-	0.5.0 (2026-07-21) -> 1.1.0 (2026-07-28)
-	79 commits.
+	0.5.0 (2026-07-21) -> 1.1.1 (2026-08-02)
+	81 commits.
 
 Commits
 =======
 
+
+* 2026-08-02  : **1.1.1**
+
+.. code-block:: text
+
+              - * Fix for Python API reference doc.
+                  File name change caused it to be dropped from the PDF.
+ 2026-07-29   ⋯
+
+.. code-block:: text
+
+              - readme asterisk needs escape: i.e. prefix_t \*
 
 * 2026-07-28  : **1.1.0**
 

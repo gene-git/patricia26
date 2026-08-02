@@ -5,6 +5,11 @@ patricia26
 Recent Changes
 ==============
 
+**1.1.1**
+
+* Fix for Python API reference doc. 
+  File name change caused it to be dropped from the PDF.
+
 **1.1.0**
 
 * C-Code:
@@ -39,7 +44,7 @@ This project was forked from
 along with some modifications of the core c-code by 
 `Joel Sommers' PyTricia <https://github.com/jsommers/pytricia>`_.
 The main change introduced in PyTricia changed *node->prefix* from
-*prefix_t * to a *prefix_t* thereby reducing the number of *malloc* calls. 
+*prefix_t \** to a *prefix_t* thereby reducing the number of *malloc* calls. 
 
 The C-code has been tidied some and is now C23 compliant. 
 See the *meson.build* file for more details on compile and link options.
