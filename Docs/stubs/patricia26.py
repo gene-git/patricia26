@@ -1,1 +1,1 @@
-../../src/stubs/_patricia26.pyi
+../../src/stubs/patricia26.pyi

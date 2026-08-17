@@ -5,6 +5,13 @@ patricia26
 Recent Changes
 ==============
 
+**1.2.0**
+
+* Cython - initialize variable 
+  Can lead to UB.
+
+* Drop the Patricia26Int experimental class - too slow.
+
 **1.1.1**
 
 * Fix for Python API reference doc. 

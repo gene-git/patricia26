@@ -41,7 +41,7 @@
 # cython: initializedcheck=False
 # patricia26.pyx - High-Speed String/CIDR Engine
 
-from libc.string cimport strchr, memcpy
+from libc.string cimport strchr, memcpy, memset
 from libc.stdlib cimport atoi
 from libc.stdint cimport uint8_t
 
@@ -148,6 +148,7 @@ cdef class Patricia26:
     cdef inline patricia_node_t* _parse_and_find(self, object key, bint exact) noexcept:
         cdef prefix_t prefix
         cdef Py_ssize_t string_size
+        memset(&prefix, 0, sizeof(prefix_t))
 
         # Standardize input to a string
         if not isinstance(key, str):
@@ -321,6 +322,8 @@ cdef class Patricia26:
         cdef Py_ssize_t string_size
         cdef const char* p = PyUnicode_AsUTF8AndSize(key, &string_size)
 
+        memset(&prefix, 0, sizeof(prefix_t))
+
         if string_size == 0 or string_size >= 64:
             raise ValueError(key)
 
@@ -454,7 +457,7 @@ cdef class Patricia26:
             node.data = NULL
 
             # Safe branch lookup: node is guaranteed to exist here
-            target_tree = self._tree_v6 if node.prefix.family == 10 else self._tree_v4
+            target_tree = self._tree_v6 if node.prefix.family == AF_INET6 else self._tree_v4
             patricia_remove(target_tree, node)
 
     def lookup_lpm(self, str ip_str):
@@ -469,6 +472,8 @@ cdef class Patricia26:
         cdef char* slash_pos = NULL
         cdef char* mask_str = NULL
         cdef char c_buf[64]
+
+        memset(&prefix, 0, sizeof(prefix_t))
 
         try:
             p = PyUnicode_AsUTF8AndSize(ip_str, &string_size)

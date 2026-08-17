@@ -213,12 +213,14 @@ install_data(
 subdir('src/python')
 
 # Installs type stubs next to extension binary inside site-packages
+
+# Update your installation tracking targets at the bottom of the file
 py.install_sources(
   [
-    'src/stubs/_patricia26.pyi',
-    'src/stubs/_patricia26_int.pyi',
+    'src/stubs/patricia26.pyi',
     'src/python/py.typed',
     'src/python/__init__.py',
   ],
   subdir: 'patricia26',
 )
+

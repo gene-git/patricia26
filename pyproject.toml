@@ -1,6 +1,6 @@
 [project]
 name = "patricia26"
-version = "1.1.1"
+version = "1.2.0"
 description = "Fork of Dave Plonka's patricia library together with an optimized Python wrapper module"
 readme = "Readme.rst"
 requires-python = ">=3.14"

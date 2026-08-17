@@ -28,25 +28,6 @@ hawkmoth_cflags = [
     "-DHAVE_IPV6"
 ]
 
-# Configure AutoAPI parameters
-#autoapi_type = 'python'
-#autoapi_dirs = ['../src/stubs']
-#autoapi_file_patterns = ['*.pyi', '*.py']
-#autoapi_ignore = ["*.c", "*.h"]     # , "*/src/*"]
-#autoapi_generate_api_docs = True
-#autoapi_add_toctree_entry = False
-
-#autoapi_options = [
-#    "members",
-#    "undoc-members",
-#    # "private-members",  # Omit this to hide single-underscore methods (_func)
-#    # "special-members",  # REMOVE OR COMMENT THIS OUT to hide all __dunder__ methods
-#    "show-inheritance",
-#    "show-module-summary",
-#    "imported-members",
-#]
-
-
 latex_elements = {
     'papersize': 'letterpaper',
     'pointsize': '10pt',

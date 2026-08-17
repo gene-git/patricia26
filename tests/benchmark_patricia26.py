@@ -11,30 +11,6 @@
 import sys
 import time
 from patricia26 import Patricia26
-from patricia26 import Patricia26Int
-
-import ipaddress
-
-def benchmark_bulk_lookup_ipa(pyt_int: Patricia26, iterations: int, check_me: str):
-
-    if '/' in check_me:
-        test_ips = iterations * [ipaddress.ip_network(check_me)]
-    else:
-        test_ips = iterations * [ipaddress.ip_address(check_me)]
-
-    start_time = time.perf_counter()
-    results = pyt_int.bulk_lookup(test_ips)
-    end_time = time.perf_counter()
-
-    total_time = end_time - start_time
-    lookups_per_sec = iterations / total_time
-
-    #print(f"Bulk IPA Lookups / sec: {len(test_ips) / (end - start):,.2f}")
-
-    ipt = 'CIDR' if '/' in check_me else 'IP'
-    mark = 'Bulk'
-    front = f'{mark:>8s} {ipt:>8s} {"val":>12s}'
-    print(f'{front} {total_time:9.4f} {lookups_per_sec:13,.0f}')
 
 def benchmark_lookup(pyt: Patricia26, iterations: int, check_me: str, bulk: bool):
 
@@ -106,10 +82,8 @@ if __name__ == "__main__":
         }
 
     pyt = Patricia26()
-    pyt_int = Patricia26Int()
     for (net, val) in nets.items():
         pyt[net] = val
-        pyt_int[ipaddress.ip_network(net)] = val
 
     if len(sys.argv) > 1:
         iterations = int(sys.argv[1])
@@ -140,5 +114,3 @@ if __name__ == "__main__":
 
     print('')
     print(' bulk_lookup_ipa:')
-    benchmark_bulk_lookup_ipa(pyt_int, iterations, '192.0.2.128/25')
-    benchmark_bulk_lookup_ipa(pyt_int, iterations, '192.0.2.45')
