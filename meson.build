@@ -181,7 +181,7 @@ test('smoke', smoke_test,
 # Install
 #
 s_share = 'src/share'
-s_docs = 'Docs'
+s_docs = 'src/docs'
 
 install_data(
   [

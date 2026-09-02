@@ -3,188 +3,185 @@ from typing import Any, Iterator, Iterable, IO
 
 class Patricia26:
     def __init__(self) -> None:
-        """Instantiates a pair of C-based Patricia network trees one for IPv4 and one for IPv6
-
-        Each network item is a string form of an IP address or a CIDR Block.
-
-        Args:
-            None
-
-        Raises:
-            MemoryError: If unable to allocate the native C Patricia tree.
+        """
+        Instantiates a pair of C-based Patricia network trees one for IPv4 and one for IPv6
 
         Internally keeps 2 trees - 1 for ipv4 and 1 for ipv6
+        Each network item is a string form of an IP address or a CIDR Block.
+
+        :raises MemoryError: If unable to allocate the native C Patricia tree.
+
         """
         ...
 
     def __getitem__(self, prefix_str: str) -> Any:
-        """Retrieves the data value from the longest matching prefix block (LPM).
+        """
+        Retrieves the data value from the longest matching prefix block (LPM).
 
-        Args:
-            prefix_str: The IP or CIDR string to query (e.g., "192.0.2.45").
-
-        Returns:
-            Any: The custom Python object metadata mapped to the matched network prefix.
-            None: no matching prefix was found 
-
+        :param prefix_str: The IP or CIDR string to query (e.g., "192.0.2.45").
+        :returns: The custom Python object metadata mapped to the matched network prefix.
+                  or None if no matching prefix was found 
         """
         ...
 
     def __setitem__(self, prefix_str: str, value: Any) -> None:
-        """Inserts value to the LPM of an IP or CIDR block string.
+        """
+        Inserts value to the LPM of an IP or CIDR block string.
 
-        Args:
-            prefix_str: The IP subnet string (e.g., "192.0.2.0/24") used to lookup the LPM
-            value: Custom Python object metadata to associate with this network.
-
-        Raises:
-            RuntimeError: If attempting to modify a frozen Patricia26 tree.
+        :param prefix_str: The IP subnet string (e.g., "192.0.2.0/24") used to lookup the LPM
+        :param value: Custom Python object metadata to associate with this network.
+        :raises RuntimeError: If attempting to modify a frozen Patricia26 tree.
         """
         ...
 
     def insert(self, prefix_str: str, value: Any) -> None:
-        """Inserts value to the LPM of an IP or CIDR block string.
+        """
+        Inserts value to the LPM of an IP or CIDR block string.
 
         Saem as __setitem__.
 
-        Args:
-            prefix_str: The IP subnet string (e.g., "192.0.2.0/24") used to lookup the LPM
-            value: Custom Python object metadata to associate with this network.
-
-        Raises:
-            RuntimeError: If attempting to modify a frozen Patricia26 tree.
+        :param prefix_str: The IP subnet string (e.g., "192.0.2.0/24") used to lookup the LPM
+        :param value: Custom Python object metadata to associate with this network.
+        :raises RuntimeError: If attempting to modify a frozen Patricia26 tree.
         """
         ...
 
     def __contains__(self, prefix_str: str) -> bool:
-        """Checks if prefix_str IP or CIDR is contained within any network prefix within the tree.
+        """
+        Checks if prefix_str IP or CIDR is contained within any network prefix within the tree.
 
-        Args:
-            prefix_str: The target network block or IP string to evaluate.
-
-        Returns:
-            bool: True if the target falls within an existing prefix block, False otherwise.
+        :param prefix_str: The target network block or IP string to evaluate.
+        :returns: True if the target falls within an existing prefix block, False otherwise.
         """
         ...
 
     def __iter__(self) -> Iterator[str]:
-        """Provides a memory-flat depth-first trie branch pointer iterator loop.
-           over all IPv4 and IPv6 prefixes
-
-        Yields:
-            str: The network prefix CIDR block strings stored in the tree.
+        """
+        Provides an iterator over all IPv4 and IPv6 prefixes
+        :yields: The next network prefix CIDR block strings stored in the tree.
         """
         ...
 
     def iter_v4(self) -> Iterator[str]:
-        """Provides a memory-flat depth-first trie branch pointer iterator loop.
-           over all IPv4 prefixes
+        """
+        Provides an iterator over all IPv4 prefixes
 
-        Yields:
-            str: The network prefix CIDR block strings stored in the tree.
+        :yields: The next network prefix CIDR block strings stored in the tree.
         """
         ...
 
     def iter_v6(self) -> Iterator[str]:
-        """Provides a memory-flat depth-first trie branch pointer iterator loop.
-           over all IPv6 prefixes
+        """
+        Provides an iterator over all IPv6 prefixes
 
-        Yields:
-            str: The network prefix CIDR block strings stored in the tree.
+        Yields: The next network prefix CIDR block strings stored in the tree.
         """
         ...
 
 
     def __delitem__(self,  prefix_str: str) -> None:
         """
-        Removes prefix_str from the tree if it present.
-        Args:
-            prefix_str: The IP or CIDR string to delete (e.g., "192.0.2.0/24").
+        Removes prefix_str from the tree (if it present).
 
-        Raises:
-            RuntimeError: If attempting to modify a frozen Patricia26 tree.
+        :param prefix_str: The IP or CIDR string to delete (e.g., "192.0.2.0/24").
+        :raises RuntimeError: If attempting to modify a frozen Patricia26 tree.
         """
         ...
 
     def prefixes_v4(self) -> list[str]:
-        """Returns a list of all IPv4 tree prefixes."""
+        """
+        Returns a list of all IPv4 tree prefixes.
+        :returns: List of all IPv4 prefixes in the tree.
+        """
         ...
 
-    def prefixes_v4(self) -> list[str]:
-        """Returns a list of all IPv6 tree prefixes."""
+    def prefixes_v6(self) -> list[str]:
+        """
+        Returns a list of all IPv6 tree prefixes
+        :returns: List of all IPv6 prefixes in the tree.
+        """
         ...
 
     def prefixes(self) -> list[str]:
-        """Returns a flat list of all tree prefixes."""
+        """
+        Returns a list of all prefixes
+        :returns: List of all IPv4 and IPv6 prefixes in the tree.
+        """
         ...
 
     def keys(self) -> list[str]:
-        """Alias for prefixes()."""
+        """
+        Alias for prefixes()
+        """
         ...
 
     def num_prefixes_v4(self) -> int:
-        """Returns the total number of IPv4 prefixes in the tree.
+        """
+        Returns the total number of IPv4 prefixes in the tree.
+        :returns: Number of IPv4 prefixes.
         """
         ...
 
     def num_prefixes_v6(self) -> int:
-        """Returns the total number of IPv6 prefixes in the tree.
+        """
+        Returns the total number of IPv6 prefixes in the tree.
+        :returns: Number of IPv6 prefixes.
         """
         ...
 
     def __len__(self) -> int:
-        """Returns the total number of active entries inside the tree.
+        """
+        Returns the total number of prefixes in the tree.
 
         Same as num_prefixes_v4() + num_prefixes_v6()
+        :returns: Number of prefixes in the tree (both IPv4 and IPv6)
         """
         ...
 
     def freeze(self) -> None:
-        """Locks both ipv4 and ipv6 trees prevent updates or changes."""
+        """
+        Locks both ipv4 and ipv6 trees prevent updates or changes
+        """
         ...
 
     def __init_subclass__(cls) -> None: ...
 
     def thaw(self) -> None:
-        """Unlocks a frozen tree to re-allow modifications."""
+        """
+        Unlocks a frozen tree to re-allow modifications
+        """
         ...
 
     def lookup(self, ip_str: str) -> Any:
-        """Return the value associated with LPM (longest prefix match) matching ip_str 
+        """
+        Return the value associated with LPM (longest prefix match) matching ip_str 
 
         LPM is the longest prefix match.
 
-        Args:
-            ip_str: An IP address or CIDR string (e.g., "192.0.2.45" or "10.0.0.0/24").
-
-        Returns:
-            Any | None: The custom Python object metadata mapped to the matched network.
-                         or None if unmatched
+        :param ip_str: An IP address or CIDR string (e.g., "192.0.2.45" or "10.0.0.0/24").
+        :returns: The custom Python object metadata mapped to the matched network.
+                  or None if unmatched
         """
         ...
 
     def bulk_lookup(self, ip_strings: list[str]) -> list[Any]:
-        """Similat to lookup() but takes a list list of IP or CIDR strings as input.
+        """
+        Similar to lookup() but takes a list list of IP or CIDR strings as input.
 
-        Significantly fastger than looping on lookup() using optimied C code.
+        Significantly faster than looping on lookup() as it uses optimied C code.
 
-        Args:
-            ip_strings: A list of target IP or CIDR strings.
-
-        Returns:
-            list[Any]: An array of matched metadata objects corresponding to the input list index.
-            If an ip_string has no matching prefix, then None is returned for that element.
+        :param ip_strings: A list of target IP or CIDR strings.
+        :returns: A list of values that match each corresponding ip_string in input
+                  If an ip_string has no matching prefix, then None is returned for that element.
         """
         ...
 
     def get_prefix(self, prefix_str: str) -> str | None:
-        """Finds and returns the containing network prefix CIDR string for an IP or CIDR.
+        """
+        Finds and returns the prefix (CIDR) string for an IP or CIDR.
 
-        Args:
-            prefix_str: The IP address string to check.
-
-        Returns:
-            str | None: The closest enclosing network block CIDR string, or None if unmatched.
+        :param prefix_str: The IP/CIDR string to check.
+        :returns: The closest enclosing network block CIDR string, or None if unmatched.
         """
         ...
 
@@ -193,36 +190,30 @@ class Patricia26:
         ...
 
     def children(self, prefix_str: str) -> list[str]:
-        """Extracts a list of all subnets stored that are more specific than the parent match.
+        """
+        Extracts a list of all child subnets (those with smaller prefix than the parent)
 
-        Args:
-            prefix_str: The base network enclosure string block.
-
-        Returns:
-            list[str]: A list of more specific subnet keys residing beneath the target block.
+        :param prefix_str: The prefix to lookup
+        :returns: A list of more specific subnets that sit beneath the LPM(prefix_str).
         """
         ...
 
     def parent(self, prefix_str: str) -> str | None:
-        """Find and return the direct parent network prefix enclosing this target.
+        """
+        Find and return the parent prefix that encloses the input prefix.
 
-        Args:
-            prefix_str: The base network enclosure string block.
-
-        Returns:
-            str | None: The parent network CIDR string if found, or None if prefix 
-                is not contained within a broader network in the tree.
+        :param prefix_str: The prefix to lookup the parent for.
+        :returns: The parent network prefix if found, or None if prefix 
+                  is not contained within any subnet in tree
         """
         ...
 
     def has_prefix(self, ip_str: str) -> bool:
-        """Determines if an exact prefix match exists as a key in the tree.
+        """
+        Determines if an exact prefix match exists in the tree.
 
-        Args:
-            ip_str: The exact network block string to evaluate (e.g., "192.168.0.0/16").
-
-        Returns:
-            bool: True if the exact prefix key exists with a payload, False otherwise.
+        :param ip_str: The prefix to check (e.g., "192.168.0.0/16").
+        :returns: True if the prefix exists (non-glue)
         """
         ...
 
@@ -235,12 +226,8 @@ class Patricia26:
         Similar to lookup() but returns a tuple of (lpm, value) 
         longest-prefix match lookup returning a tuple of (matching_cidr, value).
 
-        Args:
-            ip_str: The exact network block string to evaluate (e.g., "192.168.0.0/16").
-
-        Returns:
-            tuple of (lmp, value)
-            If no matching prefix then (None, None).
+        :param ip_str: The prefix string to lookup (e.g., "192.168.0.0/16").
+        :returns: tuple of (lmp, value) or (None, None) if not found.
         """
         ...
 
@@ -248,8 +235,7 @@ class Patricia26:
         """
         Insert a list of tuples of (prefix, value) into the tree:
 
-        Args:
-            items: list of (prefix, tuples) to add to the tree
+        :param items: list of (prefix, tuples) to add to the tree
         """
         ...
 
@@ -257,8 +243,7 @@ class Patricia26:
         """
         Write the tree to the file_object stream.
 
-        Args:
-            file_obj: File object opened in binary mode ('wb')
+        :param file_obj: File object that was opened in binary mode ('wb')
         """
         ...
 
@@ -266,8 +251,7 @@ class Patricia26:
         """
         Read the tree from the file object stream.
 
-        Args:
-            file_obj: File object opened in binary mode ('rb')
+        :param file_obj: File object opened in binary mode ('rb')
         """
         ...
 

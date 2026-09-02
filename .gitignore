@@ -1,6 +1,5 @@
 build/
 dist/
-Docs/_build
-./tests-dev
+src/docs/_build
 __pycache__
 

@@ -180,18 +180,14 @@ int comp_with_mask(const void *addr, const void *dest, unsigned int mask) {
  * Converts structural network prefix parameters back into standard ASCII text
  * string notation representations (e.g., "192.168.1.0/24").
  *
- * Args:
- *     prefix (prefix_t*): Pointer to the source network prefix block structure.
- *     buff (char*): Pointer to a destination character array buffer. Must be 
- *                   adequately sized to handle string overflows.
- *     with_len (int): A boolean flag (1 or 0) toggling whether the subnet mask 
- *                     suffix (like "/24") is appended to the string.
- *
- * Returns:
- *     char*: Pointer to the destination string buffer (`buff`) containing 
- *     the formatted ASCII data layout.
+ * :param prefix: Pointer to the source network prefix block structure.
+ * :param buff: Pointer to a destination character array buffer. Must be 
+ *              adequately sized to handle string overflows.
+ *              with_len (int): A boolean flag (1 or 0) toggling whether the subnet mask 
+ *              suffix (like "/24") is appended to the string.
+ * :returns: Pointer to the destination string buffer (`buff`) containing 
+ *            the formatted ASCII data layout.
  */
-
 char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
 
     if (!prefix) {
@@ -277,22 +273,19 @@ char *prefix_toa(prefix_t *prefix) {
 }
 
 /**
- * Constructs a structural prefix node container from raw network parameters.
+ * Constructs a prefix node container from raw network parameters.
  *
  * This function translates raw binary representations of network addresses
- * into a standardized prefix block layout compatible with the trie engine.
+ * into a standardized prefix block layout for the patricia tree.
  *
- * Args:
- *     family (int): The network address family configuration protocol
- *         (e.g., AF_INET or AF_INET6).
- *         dest (void*): Pointer to the raw binary network address array.
- *         bitlen (int): The total routing bitmask bitlength allocation.
- *         prefix (prefix_t*): Pointer to an allocated destination prefix
- *         structure where the result will be populated.
- *
- * Returns:
- *     int: Returns 1 on successful extraction and construction, 0 if the
- *     bitlength exceeds system boundaries, or -1 for unsupported address families.
+ * :param family: The network address family protocol
+ *                (e.g., AF_INET or AF_INET6).
+ * :param dest: Pointer to the raw binary network address array.
+ * :param bitlen: The total routing bitmask bitlength.
+ * :param prefix: Pointer to an allocated destination prefix
+ *                structure where result will be saved.
+ * :returns: Returns 1 on success, 0 if the bitlength exceeds limits, 
+ *                   or -1 for unsupported address families.
  */
 prefix_t *New_Prefix(int family, void *dest, int bitlen, prefix_t *prefix) {
     int dynamic_allocated = 0;
@@ -348,13 +341,10 @@ static int num_active_patricia = 0;      // NOLINT(cppcoreguidelines-avoid-non-c
  * This function builds the base routing tree tracking structure, establishing
  * the maximum depth limit of the radix bit-testing operations.
  *
- * Args:
- *     maxbits (int): The maximum bitlength depth allowable for keys in this
- *         trie (e.g., 32 for IPv4, 128 for IPv6).
- *
- * Returns:
- *     patricia_tree_t*: Pointer to the newly allocated and initialized
- *     Patricia tree structure, or NULL if memory allocation fails.
+ * :param maxbits: Maximum bitlength allowable for keys in this
+ *                 trie (e.g., 32 for IPv4, 128 for IPv6).
+ * :returns: Pointer to the newly allocated and initialized
+ *           Patricia tree structure, or nullptr if memory allocation fails.
  */
 patricia_tree_t *New_Patricia(int maxbits) {
     patricia_tree_t *patricia = calloc(1, sizeof(*patricia));
@@ -387,12 +377,11 @@ patricia_tree_t *New_Patricia(int maxbits) {
  * It detaches all child nodes and clears their internal payload properties. Unlike Destroy_Patricia,
  * this function leaves the top-level base tree pointer structure initialized and ready for reuse.
  *
- * Args:
- *     patricia (patricia_tree_t*): Pointer to the base Patricia tree object to purge.
- *     func (void_fn_t): An optional user data deallocation callback function pointer.
- *         If provided, the engine will systematically execute `func(node->data)`
- *         on every payload container encountered before destroying the node shell itself.
- *         Pass NULL if your node data properties do not require custom memory tracing hooks.
+ * :param patricia: Pointer to the base Patricia tree object to purge.
+ * :param func: optional user data deallocation callback function pointer.
+ *              If provided, the engine will systematically execute `func(node->data)`
+ *              on every payload container encountered before destroying the node itself.
+ *              Pass nullptr if your node data properties do not require custom memory managerment hooks.
  */
 void Clear_Patricia(patricia_tree_t *patricia, void_fn_t func) {
 
@@ -453,10 +442,9 @@ void Clear_Patricia(patricia_tree_t *patricia, void_fn_t func) {
  * This function performs a recursive post-order tree-walk, freeing every node.
  * It permits an optional custom callback to securely purge node data payloads.
  *
- * Args:
- *     patricia (patricia_tree_t*): Pointer to the Patricia tree system to wipe.
- *     func (void_fn_t): An optional custom data-cleanup function pointer to
- *                       execute on each node's user data value, or NULL to skip data cleanup.
+ * :param patricia: Pointer to the Patricia tree system to wipe.
+ * :func: An optional custom data-cleanup function pointer to
+ *        execute on each node's user data value, or nullptr to skip data cleanup.
  */
 void Destroy_Patricia(patricia_tree_t *patricia, void_fn_t func) {
     Clear_Patricia(patricia, func);
@@ -516,13 +504,10 @@ void patricia_process(patricia_tree_t *patricia, void_fn_2_t func) {
  * This function performs a strict bitwise traversal down the radix tree matrix
  * to locate a node that matches the provided network prefix configuration exactly.
  *
- * Args:
- *     trie (patricia_tree_t*): Pointer to the base initialized Patricia Trie structure.
- *     prefix (prefix_t*): The specific IP prefix mask boundary to query.
- *
- * Returns:
- *     patricia_node_t*: Pointer to the matching node structure if found, or
- *     NULL if the target prefix does not exist in the trie matrix.
+ * :param patricia: Pointer to the base initialized Patricia Trie structure.
+ * :param prefix: The specific IP prefix mask to query.
+ * :returns: Pointer to the matching node structure if found, or
+ *           nullptr if target prefix does not exist in the tree.
  */
 patricia_node_t *patricia_search_exact(patricia_tree_t *patricia, prefix_t *prefix) {
     patricia_node_t *node = nullptr;
@@ -675,13 +660,10 @@ patricia_node_t *patricia_search_best2(patricia_tree_t *patricia, prefix_t *pref
  * This function performs an un-mutating longest-match radix search. It maps
  * specific host IP queries back to their broadest covering subnet masks.
  *
- * Args:
- *     patricia (patricia_tree_t*): Pointer to the base Patricia tree structure.
- *     prefix (prefix_t*): Pointer to the target prefix/IP to look up.
- *
- * Returns:
- *     patricia_node_t*: Pointer to the most specific matching node container
- *     covering the target address, or NULL if no covering route exists.
+ * :param patricia: Pointer to the base Patricia tree structure.
+ * :prefix: Pointer to the target prefix/IP to look up.
+ * :returns: Pointer to the most specific matching node 
+ *           covering the target address, or nullptr if not found
  */
 patricia_node_t *patricia_search_best(patricia_tree_t *patricia, prefix_t *prefix) {
     return patricia_search_best2(patricia, prefix, 1);
@@ -694,13 +676,10 @@ patricia_node_t *patricia_search_best(patricia_tree_t *patricia, prefix_t *prefi
  *  This is the primary mutating driver of the radix trie. It traverses the bit 
  *  index paths; if an exact match is missing, a new payload node is created.
  *
- * Args:
- *     patricia (patricia_tree_t*): Pointer to the base Patricia tree structure.
- *     prefix (prefix_t*): Pointer to the target network prefix key layout.
- *
- * Returns:
- *     patricia_node_t*: Pointer to the newly created or pre-existing matching
- *     node structure within the tree matrix, or NULL if allocation fails.
+ * :param patricia: Pointer to the base Patricia tree structure.
+ * :prefix: Pointer to the target network prefix layout.
+ * :returns: Pointer to the newly created or pre-existing matching
+ *           node within the tree matrix, or nullptr if allocation fails.
  */
 patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
     patricia_node_t *node = nullptr;
@@ -933,10 +912,9 @@ patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
  * Removes a specific node structural point, rearranging internal branch pointer
  * paths to preserve radix trie sorting and lookup logic.
  *
- * Args:
- *     patricia (patricia_tree_t*): Pointer to the parent Patricia tree structure.
- *     node (patricia_node_t*): Pointer to the specific node container to
- *                              remove from the tree array layout.
+ * :param patricia: Pointer to the parent Patricia tree structure.
+ * :param node: Pointer to the specific node container to
+ *              remove from the tree array layout.
  */
 void patricia_remove(patricia_tree_t *patricia, patricia_node_t *node) {
     patricia_node_t *parent = nullptr;

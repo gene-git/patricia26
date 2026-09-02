@@ -13,10 +13,10 @@
 # target = clibs or pymods
 #
 if (( $# < 1 )) ; then
-    echo "Missing args : <destdir>"
-    exit 1
+    dest='build/pkg'
+else
+    dest="$1"
 fi
-dest="$1"
 
 # 
 # ensure we have full path.
@@ -25,30 +25,6 @@ pkgdir=$(realpath "$dest")
 
 /usr/bin/meson install -C build/release --destdir "$pkgdir" > /dev/null
 
-sitedir=$(python -c "import site; print(site.getsitepackages()[0])")
-installdir="${pkgdir}${sitedir}"
-mkdir -p "$installdir"
+exit
 
-uv_opts=(
-    --python /usr/bin/python
-    --system
-    --no-build-isolation
-    --link-mode=copy
-    --compile-bytecode
-    )
 
-/usr/bin/uv pip install "${uv_opts[@]}" --target "$installdir" dist/*.whl
-locks=(
-    "$installdir"/patricia26/.lock 
-    "$installdir"/.lock 
-    "$installdir"/patricia26/uv.lock 
-    "$installdir"/uv.lock 
-    uv.lock)
-/usr/bin/rm -rf "${locks[@]}"
-
-#
-# meson strips the /usr/lib/libpatricia26.so but not the puthon modules
-#
-if [[ -d "$installdir/patricia26"  ]] ; then
-    /usr/bin/strip "$installdir"/patricia26/_patricia26*.so
-fi

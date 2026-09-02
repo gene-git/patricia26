@@ -1,7 +1,11 @@
 #!/usr/bin/bash
 #
 # Benchmark patricia26 and pytricia
+# must have run at top ./scripts/do-build; ./scripts/do-install build/pkg
 #
+tests_dir=$(/usr/bin/pwd)
+tests_dir=$(realpath "$tests_dir")
+top=$(realpath "$tests_dir"/../../)
 
 iterations=10000000
 if [[ "$1" != "" ]] ; then
@@ -13,8 +17,8 @@ fi
 #
 echo "----------------------"
 
-export PYTHONPATH=../build/pkg/usr/lib/python3.14/site-packages
-export LD_LIBRARY_PATH=../build/pkg/usr/lib
+export PYTHONPATH="$top"/build/pkg/usr/lib/python3.14/site-packages
+export LD_LIBRARY_PATH="$top"/build/pkg/usr/lib
 
 /usr/bin/python benchmark_patricia26.py "$iterations"
 

@@ -1,1 +1,0 @@
-../../src/stubs/patricia26.pyi

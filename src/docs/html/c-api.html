@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>3. Particia26 C-Library: API Reference &#8212; patricia26 1.3.0
+ documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=1f29e9d3"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="4. Migrating from PyTricia" href="pytricia-migrate.html" />
+    <link rel="prev" title="2. Python Particia26 Class: API Reference" href="python-api.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="particia26-c-library-api-reference">
+<span id="c-code-api"></span><h1><span class="section-number">3. </span>Particia26 C-Library: API Reference<a class="headerlink" href="#particia26-c-library-api-reference" title="Link to this heading">¶</a></h1>
+<section id="data-structures">
+<h2><span class="section-number">3.1. </span>Data Structures<a class="headerlink" href="#data-structures" title="Link to this heading">¶</a></h2>
+<dl class="c struct">
+<dt class="sig sig-object c" id="c.prefix_tag">
+<span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">prefix_tag</span></span></span><a class="headerlink" href="#c.prefix_tag" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Unified data model wrapper representing a standardized IP network prefix boundary.</p>
+<p>This structure maps structured multi-family properties (IPv4 and IPv6 layouts) into a
+unified abstract interface. It wraps an anonymous union that can toggle its internal binary
+byte layout seamlessly depending on the network type.</p>
+<dl class="simple">
+<dt>Attributes:</dt><dd><p>family (u_short): Address boundary protocol (AF_INET for IPv4 | AF_INET6 for IPv6 ).
+bitlen (u_short): netowrk bitmask mask length; aka cidr prefix len (e.g., 24 for a /24 block).
+ref_count (int): Ref couner for allocation tracking with memory reclamation.
+add (union): Anonymous data payload container holding the raw binary network address.
+add.sin (struct in_addr): Raw binary structure representing a standard 32-bit IPv4 address.
+add.sin6 (struct in6_addr): Raw binary structure representing a 128-bit IPv6 address.</p>
+</dd>
+</dl>
+<p>Support for IPv6 is no longer #if defined away via HAVE_IPV6
+bitlen is now 1 byte - long enough for ipv4 and ipv6.
+Add 1 byte padding to keep struct explicitly aligned on even byte boundary</p>
+</dd></dl>
+
+<dl class="c struct">
+<dt class="sig sig-object c" id="c.patricia_node_tag">
+<span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">patricia_node_tag</span></span></span><a class="headerlink" href="#c.patricia_node_tag" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Core node structure within the Patricia Trie array matrix.</p>
+<p>Each node represents a bitwise junction point or an actual data payload
+container inside the routing tree layout.</p>
+<dl>
+<dt>Attributes:</dt><dd><p>bit (int): The specific bit index position tested at this tree level.
+prefix (prefix_t): struct with the network IP prefix payload. Can be</p>
+<blockquote>
+<div><p>NULL for purely intermediate routing nodes.</p>
+</div></blockquote>
+<p>left (patricia_node_t*): Pointer to the left child node (0-bit branch).
+right (patricia_node_t*): Pointer to the right child node (1-bit branch).
+parent (patricia_node_t*): Pointer to the parent node for fast traversal.</p>
+</dd>
+</dl>
+<p>Follow pytricia in changing node-&gt;prefix to be prefix_t instead of prefix_t *
+simpliefies malloc/free but</p>
+</dd></dl>
+
+<dl class="c struct">
+<dt class="sig sig-object c" id="c.patricia_tree_tag">
+<span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">patricia_tree_tag</span></span></span><a class="headerlink" href="#c.patricia_tree_tag" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Primary state tracking structure managing a full Patricia Trie instance.</p>
+<p>This context block acts as the master anchor for the bitwise radix network,
+maintaining the top sentinel head node, key length limitations, active telemetry
+sizing counters, and state lock flags.</p>
+<dl>
+<dt>Attributes:</dt><dd><p>head (patricia_node_t*): Pointer to the top-most sentinel entry node of the bitwise matrix.
+maxbits (u_int): The absolute maximum bit depth permissible for key traversal operations</p>
+<blockquote>
+<div><p>(e.g., 32 for IPv4 strings, 128 for IPv6 configurations).</p>
+</div></blockquote>
+<dl class="simple">
+<dt>num_active_node (int): Running tracking metric counting the total quantity of populated,</dt><dd><p>valid node elements currently stored inside the tree structure.</p>
+</dd>
+<dt>frozen (u_short): A configuration bitmask toggle flag (1 or 0) used to freeze the tree layout,</dt><dd><p>preventing subsequent node insertions, deletions, or structural modifications.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="functions">
+<h2><span class="section-number">3.2. </span>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<dl class="c function">
+<dt class="sig sig-object c" id="c.prefix_toa2x">
+<span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">prefix_toa2x</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">prefix_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">prefix</span></span>, <span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">buff</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n"><span class="pre">with_len</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.prefix_toa2x" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Transpiles a binary network prefix layout into a human-readable string.</p>
+<p>Converts structural network prefix parameters back into standard ASCII text
+string notation representations (e.g., “192.168.1.0/24”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prefix</strong> – Pointer to the source network prefix block structure.</p></li>
+<li><p><strong>buff</strong> – Pointer to a destination character array buffer. Must be
+adequately sized to handle string overflows.
+with_len (int): A boolean flag (1 or 0) toggling whether the subnet mask
+suffix (like “/24”) is appended to the string.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the destination string buffer (<cite>buff</cite>) containing
+the formatted ASCII data layout.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.New_Prefix">
+<span class="n"><span class="pre">prefix_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">New_Prefix</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n"><span class="pre">family</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">dest</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n"><span class="pre">bitlen</span></span>, <span class="n"><span class="pre">prefix_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">prefix</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.New_Prefix" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Constructs a prefix node container from raw network parameters.</p>
+<p>This function translates raw binary representations of network addresses
+into a standardized prefix block layout for the patricia tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>family</strong> – The network address family protocol
+(e.g., AF_INET or AF_INET6).</p></li>
+<li><p><strong>dest</strong> – Pointer to the raw binary network address array.</p></li>
+<li><p><strong>bitlen</strong> – The total routing bitmask bitlength.</p></li>
+<li><p><strong>prefix</strong> – Pointer to an allocated destination prefix
+structure where result will be saved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns 1 on success, 0 if the bitlength exceeds limits,
+or -1 for unsupported address families.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.New_Patricia">
+<span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">New_Patricia</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n"><span class="pre">maxbits</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.New_Patricia" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Allocates and initializes a new Patricia Trie structure.</p>
+<p>This function builds the base routing tree tracking structure, establishing
+the maximum depth limit of the radix bit-testing operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>maxbits</strong> – Maximum bitlength allowable for keys in this
+trie (e.g., 32 for IPv4, 128 for IPv6).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the newly allocated and initialized
+Patricia tree structure, or nullptr if memory allocation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.Clear_Patricia">
+<span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Clear_Patricia</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">patricia</span></span>, <span class="n"><span class="pre">void_fn_t</span></span><span class="w"> </span><span class="n"><span class="pre">func</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.Clear_Patricia" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Deallocates all node elements inside the tree matrix while keeping the root intact.</p>
+<p>This function walks the entire tree layout structure using an iterative post-order traversal stack.
+It detaches all child nodes and clears their internal payload properties. Unlike Destroy_Patricia,
+this function leaves the top-level base tree pointer structure initialized and ready for reuse.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patricia</strong> – Pointer to the base Patricia tree object to purge.</p></li>
+<li><p><strong>func</strong> – optional user data deallocation callback function pointer.
+If provided, the engine will systematically execute <cite>func(node-&gt;data)</cite>
+on every payload container encountered before destroying the node itself.
+Pass nullptr if your node data properties do not require custom memory managerment hooks.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.Destroy_Patricia">
+<span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Destroy_Patricia</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">patricia</span></span>, <span class="n"><span class="pre">void_fn_t</span></span><span class="w"> </span><span class="n"><span class="pre">func</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.Destroy_Patricia" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Deallocates and wipes an entire Patricia Trie system memory layout.</p>
+<p>This function performs a recursive post-order tree-walk, freeing every node.
+It permits an optional custom callback to securely purge node data payloads.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patricia</strong> – Pointer to the Patricia tree system to wipe.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Func<span class="colon">:</span></dt>
+<dd class="field-even"><p>An optional custom data-cleanup function pointer to
+execute on each node’s user data value, or nullptr to skip data cleanup.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.patricia_search_exact">
+<span class="n"><span class="pre">patricia_node_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">patricia_search_exact</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">patricia</span></span>, <span class="n"><span class="pre">prefix_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">prefix</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.patricia_search_exact" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Searches the Patricia Trie for an exact prefix match.</p>
+<p>This function performs a strict bitwise traversal down the radix tree matrix
+to locate a node that matches the provided network prefix configuration exactly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patricia</strong> – Pointer to the base initialized Patricia Trie structure.</p></li>
+<li><p><strong>prefix</strong> – The specific IP prefix mask to query.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the matching node structure if found, or
+nullptr if target prefix does not exist in the tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.patricia_search_best">
+<span class="n"><span class="pre">patricia_node_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">patricia_search_best</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">patricia</span></span>, <span class="n"><span class="pre">prefix_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">prefix</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.patricia_search_best" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Locates the Longest Prefix Match (LPM) for a given network query.</p>
+<p>This function performs an un-mutating longest-match radix search. It maps
+specific host IP queries back to their broadest covering subnet masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patricia</strong> – Pointer to the base Patricia tree structure.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Prefix<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the target prefix/IP to look up.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pointer to the most specific matching node
+covering the target address, or nullptr if not found</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.patricia_lookup">
+<span class="n"><span class="pre">patricia_node_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">patricia_lookup</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">patricia</span></span>, <span class="n"><span class="pre">prefix_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">prefix</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.patricia_lookup" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Searches for a network prefix or inserts it if it is missing.</p>
+<blockquote>
+<div><p>This is the primary mutating driver of the radix trie. It traverses the bit
+index paths; if an exact match is missing, a new payload node is created.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patricia</strong> – Pointer to the base Patricia tree structure.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Prefix<span class="colon">:</span></dt>
+<dd class="field-even"><p>Pointer to the target network prefix layout.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pointer to the newly created or pre-existing matching
+node within the tree matrix, or nullptr if allocation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="c function">
+<dt class="sig sig-object c" id="c.patricia_remove">
+<span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">patricia_remove</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">patricia_tree_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">patricia</span></span>, <span class="n"><span class="pre">patricia_node_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">node</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.patricia_remove" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Extricates an isolated target node container from the Patricia tree network.</p>
+<p>Removes a specific node structural point, rearranging internal branch pointer
+paths to preserve radix trie sorting and lookup logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patricia</strong> – Pointer to the parent Patricia tree structure.</p></li>
+<li><p><strong>node</strong> – Pointer to the specific node container to
+remove from the tree array layout.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">patricia26</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Patricia26 Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Readme.html">1. patricia26</a></li>
+<li class="toctree-l1"><a class="reference internal" href="python-api.html">2. Python Particia26 Class: API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">3. Particia26 C-Library: API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#data-structures">3.1. Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">3.2. Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pytricia-migrate.html">4. Migrating from PyTricia</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="python-api.html" title="previous chapter"><span class="section-number">2. </span>Python Particia26 Class: API Reference</a></li>
+      <li>Next: <a href="pytricia-migrate.html" title="next chapter"><span class="section-number">4. </span>Migrating from PyTricia</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/c-api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

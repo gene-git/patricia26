@@ -1,4 +1,5 @@
 
+=======================================
 Python Particia26 Class: API Reference
 =======================================
 
@@ -101,6 +102,6 @@ Python API
 ----------
 
 .. automodule:: patricia26
-   :members:
+   :members: Patricia26
    :undoc-members:
    :show-inheritance:

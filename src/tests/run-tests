@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+
+tests_dir=$(/usr/bin/pwd)
+tests_dir=$(realpath "$tests_dir")
+top=$(realpath "$tests_dir"/../../)
+
+cd "$top"
+./scripts/do-install "build/pkg"
+
+export PYTHONPATH="$top"/build/pkg/usr/lib/python3.14/site-packages
+export LD_LIBRARY_PATH="$top"/build/pkg/usr/lib
+
+echo "  =============="
+echo "  ==> Smoke test"
+echo ""
+/usr/bin/meson test -C build/release
+
+echo "  =============="
+echo "  ==> python"
+echo ""
+cd "$tests_dir"
+
+/usr/bin/pytest -v -s
+
+
