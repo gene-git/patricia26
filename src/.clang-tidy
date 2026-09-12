@@ -2,26 +2,38 @@
 # Temporarily remove 
 # -misc-include-cleaner
 # -cppcoreguidelines-avoid-magic-numbers,
+#  bugprone-*,
+#  modernize-*,
+#  performance-*,
+#  readability-*,
+#  clang-diagnostic-format,
+#  -readability-*
+#  clang-diagnostic-unused-variable,
 #
+
 Checks: '*,
-  bugprone-*,
-  modernize-*,
-  performance-*,
-  readability-*,
-  clang-diagnostic-unused-variable,
-  clang-diagnostic-format,
-  -misc-use-internal-linkage,
+  -misc-include-cleaner,
   -llvmlibc-restrict-system-libc-headers,
+  -misc-use-internal-linkage,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -android-cloexec-fopen,
   -altera-unroll-loops,
   -altera-id-dependent-backward-branch,
   -altera-struct-pack-align,
-  -bugprone-suspicious-realloc-usage,
   -bugprone-easily-swappable-parameters,
   -warnings-as-errors,
-  -llvm-header-guard,
   -readability-identifier-length,
-  -misc-include-cleaner,
   -cppcoreguidelines-avoid-magic-numbers,
-  -readability-*' 
+  -llvm-header-guard,
+  -bugprone-suspicious-realloc-usage,
+  -concurrency-mt-unsafe,
+  ' 
+
+
+CheckOptions:
+  - key: readability-magic-numbers.IgnoredIntegerValues
+    value: "0;1;2;3;4;5;7;8;10;15;16;24;31;32;48;56;64;127;128;255;256;4294967295"
+
+  - key: cppcoreguidelines-avoid-magic-numbers.IgnoredIntegerValues
+    value: '0;1;2;3;4;7;8;16;32;64;128;255;256;4294967295'
+

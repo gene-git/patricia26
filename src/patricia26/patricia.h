@@ -67,11 +67,9 @@
 #ifndef PATRICIA_H
 #define PATRICIA_H
 
+#include "patricia-export.h"
 #include <stdint.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-
-#include "patricia-export.h"
 
 /*
  * bit_test: true iff any bit set in `mask` is also set in `byte_val`.
@@ -115,15 +113,15 @@ static inline bool addr_bit_is_set(const uint8_t *addr, unsigned int bit_index) 
 /*
  * Unused
 typedef struct prefix4_tag {
-    u_short family;		
-    u_short bitlen;		
+    uint16_t family;		
+    uint16_t bitlen;		
     int ref_count;		
     struct in_addr sin;
 } prefix4_t;
 
 typedef struct prefix6_tag {
-    u_short family;		
-    u_short bitlen;		
+    uint16_t family;		
+    uint16_t bitlen;		
     int ref_count;		
     struct in6_addr sin6;
 } prefix6_t;
@@ -138,8 +136,8 @@ typedef struct prefix6_tag {
  * byte layout seamlessly depending on the network type.
  *
  * Attributes:
- *     family (u_short): Address boundary protocol (AF_INET for IPv4 | AF_INET6 for IPv6 ).
- *     bitlen (u_short): netowrk bitmask mask length; aka cidr prefix len (e.g., 24 for a /24 block).
+ *     family (uint16_t): Address boundary protocol (AF_INET for IPv4 | AF_INET6 for IPv6 ).
+ *     bitlen (uint16_t): netowrk bitmask mask length; aka cidr prefix len (e.g., 24 for a /24 block).
  *     ref_count (int): Ref couner for allocation tracking with memory reclamation.
  *     add (union): Anonymous data payload container holding the raw binary network address.
  *     add.sin (struct in_addr): Raw binary structure representing a standard 32-bit IPv4 address.
@@ -170,18 +168,18 @@ typedef struct prefix_tag {
  * container inside the routing tree layout.
  *
  * Attributes:
- *     bit (int): The specific bit index position tested at this tree level.
- *     prefix (prefix_t): struct with the network IP prefix payload. Can be
- *         NULL for purely intermediate routing nodes.
- *     left (patricia_node_t*): Pointer to the left child node (0-bit branch).
- *     right (patricia_node_t*): Pointer to the right child node (1-bit branch).
- *     parent (patricia_node_t*): Pointer to the parent node for fast traversal.
+ *      bit (int): The specific bit index position tested at this tree level.
+ *      prefix (prefix_t): struct with the network IP prefix payload. Can be
+ *      NULL for purely intermediate routing nodes.
+ *      left (patricia_node_t*): Pointer to the left child node (0-bit branch).
+ *      right (patricia_node_t*): Pointer to the right child node (1-bit branch).
+ *      parent (patricia_node_t*): Pointer to the parent node for fast traversal.
  *
  * Follow pytricia in changing node->prefix to be prefix_t instead of prefix_t *
  * simpliefies malloc/free but 
  */
 typedef struct patricia_node_tag {
-   u_int bit;
+   uint32_t bit;
    prefix_t prefix;
    struct patricia_node_tag *l, *r;
    struct patricia_node_tag *parent;
@@ -198,18 +196,18 @@ typedef struct patricia_node_tag {
  *
  * Attributes:
  *     head (patricia_node_t*): Pointer to the top-most sentinel entry node of the bitwise matrix.
- *     maxbits (u_int): The absolute maximum bit depth permissible for key traversal operations
- *         (e.g., 32 for IPv4 strings, 128 for IPv6 configurations).
+ *     maxbits (uint32_t): The absolute maximum bit depth permissible for key traversal operations
+ *     (e.g., 32 for IPv4 strings, 128 for IPv6 configurations).
  *     num_active_node (int): Running tracking metric counting the total quantity of populated,
- *         valid node elements currently stored inside the tree structure.
- *     frozen (u_short): A configuration bitmask toggle flag (1 or 0) used to freeze the tree layout,
- *         preventing subsequent node insertions, deletions, or structural modifications.
+ *     valid node elements currently stored inside the tree structure.
+ *     frozen (uint16_t): A configuration bitmask toggle flag (1 or 0) used to freeze the tree layout,
+ *     preventing subsequent node insertions, deletions, or structural modifications.
  */
 typedef struct patricia_tree_tag {
    patricia_node_t 	*head;
-   u_int		maxbits;
+   uint32_t		maxbits;
    int num_active_node;
-   u_short frozen;
+   uint16_t frozen;
 } patricia_tree_t;
 
 

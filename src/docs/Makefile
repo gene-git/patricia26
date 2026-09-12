@@ -8,16 +8,13 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
 
-SOURCES = conf.py ../version.txt \
-		  c-api.rst \
-		  index.rst \
-		  python-api.rst \
-		  pytricia-migrate.rst \
-		  stubs/patricia26.py \
-		  lib/patricia.c \
-		  lib/patricia.h
+SOURCES = conf.py ../version.txt Readme.rst Makefile 
+SOURCES += c-api.rst index.rst python-api.rst pytricia-migrate.rst
+SOURCES += stubs/patricia26.py lib/patricia.c lib/patricia.h
 
-.PHONY: help Makefile clean html latexpdf
+.PHONY: help clean html latexpdf
+
+HTML_EXCL = --exclude _sources/ --exclude .buildinfo  --exclude .doctrees/ --exclude .buildinfo.bak
 
 html: $(BUILDDIR)/html/index.html
 latexpdf: $(PKG).pdf
@@ -28,7 +25,7 @@ help:
 $(BUILDDIR)/html/index.html: $(SOURCES)
 	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
 	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
-	@rsync -av _build/html .
+	@rsync -a $(HTML_EXCL)  _build/html .
 	@echo "HTML doc done. $@"
 
 $(PKG).pdf: $(SOURCES)
@@ -40,6 +37,7 @@ $(PKG).pdf: $(SOURCES)
 	@echo "PDF doc build done: Path: $@"
 
 clean:
-	#@rm -rf $(BUILDDIR)/*
+	@rm -rf $(BUILDDIR)/*
 	@rm -rf $(PKG).pdf
+	@rm -rf html
 

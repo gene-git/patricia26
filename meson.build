@@ -224,3 +224,38 @@ py.install_sources(
   subdir: 'patricia26',
 )
 
+#
+# python tests
+#
+pytest = find_program('/usr/bin/pytest', required: false)
+if not pytest.found()
+  warning('pytest not found, tests not available')
+else
+  proj_root = meson.project_source_root()
+  build_root = meson.project_build_root()
+
+  test_env = environment()
+  test_env.prepend('PYTHONPATH', build_root / 'src/python')
+  test_env.prepend('LD_LIBRARY_PATH', meson.project_build_root())
+
+  testdir = proj_root / 'src/tests'
+
+  test_files = [
+    'test_core.py',
+  ]
+
+  foreach this_test : test_files
+    test(this_test,
+      pytest,
+      args: ['-s', testdir / this_test],
+      env: test_env,
+      suite: ['unit'],
+      timeout: 60,
+      depends: [patricia26_lib]
+    )
+  endforeach
+endif
+
+
+
+

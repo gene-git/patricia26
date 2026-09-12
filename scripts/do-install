@@ -12,6 +12,8 @@
 #
 # target = clibs or pymods
 #
+set -euo pipefail
+
 if (( $# < 1 )) ; then
     dest='build/pkg'
 else

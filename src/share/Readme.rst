@@ -5,39 +5,24 @@ patricia26
 Recent Changes
 ==============
 
+**1.4.0**
+
+* Little tidy ups.
+
+  * modernize u_int ➛ uint32_t and u_short ➛ uint16_t. 
+
+    The usage of u_short suggest the latter could also be uint8_t.
+
+  * more lint picking 
+  * meson to run all tests
+  * tweak autodoc settings
+  * remove sphinx-build tmp files from html docs 
+
 **1.3.0**
 
-* Build manager is meson/meson-python
-  Simpler and faster
+* Build manager is meson/meson-python. Simpler and faster.
 * Switch to sphinx code headers and autodoc
 * Small direcotory re-org.
-
-**1.2.0**
-
-* Cython - initialize variable 
-  Can lead to UB.
-
-* Drop the Patricia26Int experimental class - too slow.
-
-**1.1.1**
-
-* Fix for Python API reference doc. 
-  File name change caused it to be dropped from the PDF.
-
-**1.1.0**
-
-* C-Code:
-
-  - network family now defined as posix sa_family_t
-  - bitlen changed to uint8_t bitlen (holds ipv4/ipv6 prefix lengths <= 128)
-  - prefix_toa2x(): ipv4 block now uses inet_ntop() same as ipv6.
-    Seems to also be faster.
-  - tidying
-
-* Python:
-
-  - synchronize with library changes
-  - tidying
 
 Overview
 ========

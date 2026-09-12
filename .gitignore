@@ -1,5 +1,6 @@
 build/
-dist/
 src/docs/_build
-__pycache__
+__pycache__/
+__.mypy_cache/
+
 

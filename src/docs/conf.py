@@ -1,12 +1,12 @@
 # 
-# Docs/conf.py
+# src/docs/conf.py
 #
 
 import os
 import sys
 
-# --------------------------------------------
-# Set up
+# 
+# version
 #
 def read_version() -> str:
     """
@@ -23,6 +23,9 @@ def read_version() -> str:
 docs_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath("./stubs"))
 
+#
+# proj
+#
 project = "patricia26"
 author = 'Gene C'
 release = read_version()
@@ -35,10 +38,11 @@ extensions = [
 ]
 
 primary_domain = 'c'
-hawkmoth_cflags = [
+hawkmoth_clang = [
     "-std=c23",
     "-Ilib",
-]
+    "-UPATRICIA_EXPORT",
+        ]
 
 pygments_style = 'sphinx'
 
@@ -63,8 +67,10 @@ latex_elements = {
     ''',
 }
 
+#
 # Group doc tree into a single doc.
 # Tuple structure: (source start file, target name, title, author, documentclass)
+#
 latex_documents = [
     (
         'index',

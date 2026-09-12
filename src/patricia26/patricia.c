@@ -188,6 +188,42 @@ int comp_with_mask(const void *addr, const void *dest, unsigned int mask) {
  * :returns: Pointer to the destination string buffer (`buff`) containing 
  *            the formatted ASCII data layout.
  */
+static char *prefix_toa2x_ipv4(prefix_t *prefix, char *buff, int with_len) {
+    //assert(prefix->bitlen <= IPV4_BITS);
+
+    char *r = nullptr;
+    r = (char *)inet_ntop(AF_INET, &prefix->add.sin, buff, INET_ADDRSTRLEN);
+
+    if (r && with_len) {
+        assert(prefix->bitlen <= IPV4_BITS);
+        size_t used = (size_t)strlen(buff);
+        size_t buflen = NET_STR_LEN - used;
+
+        int ret = snprintf(buff + used, buflen, "/%d", prefix->bitlen);
+        if (ret < 0 || ret > (int)buflen) {
+            return nullptr;
+        }
+    }
+    return buff;
+}
+
+static char *prefix_toa2x_ipv6(prefix_t *prefix, char *buff, int with_len) {
+    char *r = nullptr;
+    r = (char *)inet_ntop(AF_INET6, &prefix->add.sin6, buff, INET6_ADDRSTRLEN);
+
+    if (r && with_len) {
+        assert(prefix->bitlen <= IPV6_BITS);
+
+        size_t used =  (size_t)strlen(buff);
+        size_t bufflen = NET_STR_LEN - used;
+        int ret = snprintf(buff + used, bufflen, "/%d", prefix->bitlen);
+        if (ret < 0 || ret > (int)bufflen) {
+            return nullptr;
+        }
+    }
+    return buff;
+}
+
 char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
 
     if (!prefix) {
@@ -218,6 +254,8 @@ char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
     }
 
     if (prefix->family == AF_INET) {
+        return prefix_toa2x_ipv4(prefix, buff, with_len);
+        /*
         assert(prefix->bitlen <= IPV4_BITS);
 
         char *r = nullptr;
@@ -235,10 +273,12 @@ char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
             }
         }
         return buff;
-
+        */
     }
 
     if (prefix->family == AF_INET6) {
+        return prefix_toa2x_ipv6(prefix, buff, with_len);
+        /*
         char *r = nullptr;
         r = (char *)inet_ntop(AF_INET6, &prefix->add.sin6, buff, INET6_ADDRSTRLEN);
 
@@ -253,6 +293,7 @@ char *prefix_toa2x(prefix_t *prefix, char *buff, int with_len) {
             }
         }
         return buff;
+        */
     }
 
     return nullptr;
@@ -383,6 +424,9 @@ patricia_tree_t *New_Patricia(int maxbits) {
  *              on every payload container encountered before destroying the node itself.
  *              Pass nullptr if your node data properties do not require custom memory managerment hooks.
  */
+/*
+ * NOLINTBEGIN(readability-function-cognitive-complexity)
+ */
 void Clear_Patricia(patricia_tree_t *patricia, void_fn_t func) {
 
     assert(patricia);
@@ -432,8 +476,10 @@ void Clear_Patricia(patricia_tree_t *patricia, void_fn_t func) {
     if (patricia->frozen && patricia->head) {
         free(patricia->head);
     }
-    /* free(patricia); */
 }
+/*
+ * NOLINTEND(readability-function-cognitive-complexity)
+ */
 
 
 /**
@@ -681,6 +727,9 @@ patricia_node_t *patricia_search_best(patricia_tree_t *patricia, prefix_t *prefi
  * :returns: Pointer to the newly created or pre-existing matching
  *           node within the tree matrix, or nullptr if allocation fails.
  */
+/*
+ * NOLINTBEGIN(readability-function-cognitive-complexity)
+ */
 patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
     patricia_node_t *node = nullptr;
     patricia_node_t *new_node = nullptr;
@@ -690,7 +739,7 @@ patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
     uint8_t *addr = nullptr;
     uint8_t *test_addr = nullptr;
     unsigned int bitlen = 0;
-    unsigned int check_bit = 9;
+    unsigned int check_bit = 0;
     unsigned int differ_bit = 0;
 
     assert(patricia);
@@ -772,7 +821,7 @@ patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
         }
         /* must be found */
         assert(j < 8);
-        differ_bit = i * 8 + (unsigned int)j;
+        differ_bit = (i * 8) + (unsigned int)j;
         break;
     }
 
@@ -904,6 +953,9 @@ patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
     }
     return new_node;
 }
+/*
+ * NOLINTEND(readability-function-cognitive-complexity)
+ */
 
 
 /**
@@ -915,6 +967,9 @@ patricia_node_t *patricia_lookup(patricia_tree_t *patricia, prefix_t *prefix) {
  * :param patricia: Pointer to the parent Patricia tree structure.
  * :param node: Pointer to the specific node container to
  *              remove from the tree array layout.
+ */
+/*
+ * NOLINTBEGIN(readability-function-cognitive-complexity)
  */
 void patricia_remove(patricia_tree_t *patricia, patricia_node_t *node) {
     patricia_node_t *parent = nullptr;
@@ -1006,3 +1061,6 @@ void patricia_remove(patricia_tree_t *patricia, patricia_node_t *node) {
         parent->l = child;
     }
 }
+/*
+ * NOLINTEND(readability-function-cognitive-complexity)
+ */
