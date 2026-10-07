@@ -5,8 +5,8 @@ build:
   tools:
     python: "3.14"
   apt_packages:
-    - libclang-21-dev
-    - clang-21
+    - libclang-dev
+    - clang
 
 python:
   install:

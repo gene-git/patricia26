@@ -6,25 +6,29 @@ import os
 import sys
 
 if os.environ.get('READTHEDOCS') == 'True':
-    #from clang.cindex import Config
-    from hawkmoth.util import readthedocs
-    readthedocs.clang_setup()
+    from clang.cindex import Config
 
-    ## Try system libclang shared library path directly
-    #libclang_paths = [
-    #    '/usr/lib/x86_64-linux-gnu/libclang.so',
-    #    '/usr/lib/x86_64-linux-gnu/libclang.so.1',
-    #    '/usr/lib/llvm-21/lib/libclang.so',
-    #]
+    # Try system libclang shared library path directly
+    libclang_paths = [
+        '/usr/lib/x86_64-linux-gnu/libclang.so',
+        '/usr/lib/x86_64-linux-gnu/libclang.so.1',
+        '/usr/lib/x86_64-linux-gnu/libclang.so.1',
+        '/usr/lib64/libclang.so',               # Fedora / RHEL / Arch / Generic Linux
+        '/usr/lib/libclang.so',
+        '/usr/lib/llvm-21/lib/libclang.so',     # hail mary
+        '/usr/lib/llvm-22/lib/libclang.so',
+        '/usr/lib/llvm-23/lib/libclang.so',
+        '/usr/lib/llvm-24/lib/libclang.so',
+    ]
 
-    #for path in libclang_paths:
-    #    if os.path.exists(path):
-    #        Config.set_library_file(path)
-    #        break
-    #else:
-    #    # Fall back to Hawkmoth's automated setup if explicit paths are not found
-    #    from hawkmoth.util import readthedocs
-    #    readthedocs.clang_setup()
+    for path in libclang_paths:
+        if os.path.exists(path):
+            Config.set_library_file(path)
+            break
+    else:
+        # Fall back to Hawkmoth's automated setup if explicit paths are not found
+        from hawkmoth.util import readthedocs
+        readthedocs.clang_setup()
 
 
 # -----------------------------------------------------------
