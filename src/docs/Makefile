@@ -12,7 +12,7 @@ SOURCES = conf.py ../version.txt Readme.rst Makefile
 SOURCES += c-api.rst index.rst python-api.rst pytricia-migrate.rst
 SOURCES += stubs/patricia26.py lib/patricia.c lib/patricia.h
 
-.PHONY: help clean html latexpdf
+.PHONY: help Makefil clean html latexpdf
 
 HTML_EXCL = --exclude _sources/ --exclude .buildinfo  --exclude .doctrees/ --exclude .buildinfo.bak
 
@@ -24,8 +24,8 @@ help:
 
 $(BUILDDIR)/html/index.html: $(SOURCES)
 	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
-	@$(SPHINXBUILD) -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
 	@rsync -a $(HTML_EXCL)  _build/html .
+	@touch  _build/html/index.html
 	@echo "HTML doc done. $@"
 
 $(PKG).pdf: $(SOURCES)
@@ -39,5 +39,5 @@ $(PKG).pdf: $(SOURCES)
 clean:
 	@rm -rf $(BUILDDIR)/*
 	@rm -rf $(PKG).pdf
-	@rm -rf html
+	@rm -rf ./html
 

@@ -1,3 +1,5 @@
+.. _pytricia_migration:
+
 =======================
 Migrating from PyTricia
 =======================

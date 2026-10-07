@@ -5,7 +5,12 @@
 import os
 import sys
 
-# 
+if os.environ.get('READTHEDOCS') == 'True':
+    from hawkmoth.util import readthedocs
+    readthedocs.clang_setup()
+
+
+# -----------------------------------------------------------
 # version
 #
 def read_version() -> str:
@@ -23,13 +28,13 @@ def read_version() -> str:
 docs_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath("./stubs"))
 
-#
+# -----------------------------------------------------------
 # proj
 #
 project = "patricia26"
 author = 'Gene C'
+
 release = read_version()
-latex_engine = 'xelatex'
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -42,27 +47,56 @@ hawkmoth_clang = [
     "-std=c23",
     "-Ilib",
     "-UPATRICIA_EXPORT",
-        ]
+]
 
-pygments_style = 'sphinx'
+# -----------------------------------------------------------
+# latex
+#pygments_style = 'sphinx'
+latex_engine = 'xelatex'
+latex_use_xindy = True
 
 latex_elements = {
     'papersize': 'letterpaper',
-    'pointsize': '10pt',
-    'preamble': r'''
-        \usepackage{microtype}
-        \usepackage{parskip}
-        \usepackage{needspace}
+    'pointsize': '11pt',
+
+    'fvset': r'\fvset{fontsize=\scriptsize}',
+
+    'fontpkg': r'''
         \usepackage{fontspec}
+
+        \setmainfont{Source Sans 3}[Ligatures=TeX]
+        \setsansfont{Source Sans 3}[Ligatures=TeX]
+        \setmonofont{Source Code Pro}
+    ''',
+
+    'preamble': r'''
+        \usepackage{parskip}
+
+        %
+        % Fix the 11pt headheight layout warnings
+        %
+        \setlength{\headheight}{14pt}
+        \addtolength{\topmargin}{-2pt}
+
+        \usepackage{enumitem}
+        \setlist[itemize]{
+            noitemsep,
+            topsep=6pt,
+            parsep=0pt,
+            partopsep=0pt,
+            after=\vspace{0pt}
+        }
+        \setlist[enumerate]{
+            noitemsep,
+            topsep=6pt,
+            parsep=0pt,
+            partopsep=0pt,
+            after=\vspace{0pt}
+        }
 
         \usepackage{newunicodechar}
         \newunicodechar{␣}{\textvisiblespace}
         \tracinglostchars=0
-
-        \makeatletter
-        \renewcommand{\subsection}[1]{\par\bigskip\needspace{14\baselineskip}\textbf{#1}}
-        %\renewcommand{\subsection}{\par\bigskip\needspace{14\baselineskip}}
-        \makeatother
 
     ''',
 }
@@ -80,3 +114,8 @@ latex_documents = [
         'manual'
     ),
 ]
+
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
+html_css_files = [ 'custom.css',]
+

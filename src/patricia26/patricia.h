@@ -129,31 +129,38 @@ typedef struct prefix6_tag {
 
 
 /**
- * Unified data model wrapper representing a standardized IP network prefix boundary.
+ * An IP address plus it's network prefix.
  *
  * This structure maps structured multi-family properties (IPv4 and IPv6 layouts) into a
- * unified abstract interface. It wraps an anonymous union that can toggle its internal binary
- * byte layout seamlessly depending on the network type.
+ * unified interface. The IP address is held in a union to handle either IPv4 or IPv6.
+ *
+ * Dev Note: 
+ * - Support for IPv6 is no longer #if defined away via HAVE_IPV6    
+ * - bitlen is now 1 byte - long enough for ipv4 and ipv6. 
+ * - Add 1 byte padding to keep struct explicitly aligned on even byte boundary
  *
  * Attributes:
- *     family (uint16_t): Address boundary protocol (AF_INET for IPv4 | AF_INET6 for IPv6 ).
- *     bitlen (uint16_t): netowrk bitmask mask length; aka cidr prefix len (e.g., 24 for a /24 block).
- *     ref_count (int): Ref couner for allocation tracking with memory reclamation.
- *     add (union): Anonymous data payload container holding the raw binary network address.
- *     add.sin (struct in_addr): Raw binary structure representing a standard 32-bit IPv4 address.
- *     add.sin6 (struct in6_addr): Raw binary structure representing a 128-bit IPv6 address.
- *
- * Support for IPv6 is no longer #if defined away via HAVE_IPV6    
- * bitlen is now 1 byte - long enough for ipv4 and ipv6. 
- * Add 1 byte padding to keep struct explicitly aligned on even byte boundary
  */
 typedef struct prefix_tag {
+    /** Address protocol (AF_INET | AF_INET6 ) */
     sa_family_t family;		
+
+    /** netowrk bitmask mask length; aka cidr prefix len (e.g., 24 for a /24 block) */
     uint8_t bitlen;	
+
     uint8_t pad;
+
+    /** Ref couner for allocation tracking with memory reclamation. */
     int ref_count;
+
+    /**
+     * Network address (IPV4 or IPv6)
+     */
     union {
+        /** add.sin: struct for 32-bit IPv4 address */
 		struct in_addr sin;
+
+        /** add.sin6 struct for 128-bit IPv6 address */
 		struct in6_addr sin6;
     } add;
 } prefix_t;
@@ -164,50 +171,58 @@ typedef struct prefix_tag {
 /**
  * Core node structure within the Patricia Trie array matrix.
  *
- * Each node represents a bitwise junction point or an actual data payload
- * container inside the routing tree layout.
- *
- * Attributes:
- *      bit (int): The specific bit index position tested at this tree level.
- *      prefix (prefix_t): struct with the network IP prefix payload. Can be
- *      NULL for purely intermediate routing nodes.
- *      left (patricia_node_t*): Pointer to the left child node (0-bit branch).
- *      right (patricia_node_t*): Pointer to the right child node (1-bit branch).
- *      parent (patricia_node_t*): Pointer to the parent node for fast traversal.
+ * Each node is either a glue node or a node with data payload.
+ * Each node is part of the tree.
  *
  * Follow pytricia in changing node->prefix to be prefix_t instead of prefix_t *
  * simpliefies malloc/free but 
+ *
+ * Attributes:
  */
 typedef struct patricia_node_tag {
-   uint32_t bit;
-   prefix_t prefix;
-   struct patricia_node_tag *l, *r;
-   struct patricia_node_tag *parent;
-   void *data;
-   void	*user1;
+    /** The specific bit index position */
+    uint32_t bit;
+
+    /** The prefix for this node */
+    prefix_t prefix;
+
+    /** Pointer to the left child node */
+    struct patricia_node_tag *l;
+
+    /** Pointer to the right child node */
+    struct patricia_node_tag *r;
+
+    /** Pointer to the parent node */
+    struct patricia_node_tag *parent;
+
+    /** The data payload for non-glue nodes */
+    void *data;
+
+    /* unused */
+    void	*user1;
 } patricia_node_t;
 
 /**
- * Primary state tracking structure managing a full Patricia Trie instance.
+ * Top level struct for a Patricia Trie instance.
  *
- * This context block acts as the master anchor for the bitwise radix network,
- * maintaining the top sentinel head node, key length limitations, active telemetry
- * sizing counters, and state lock flags.
+ * This is the master anchor for the network tree,
+ * Has the head node  along with the max number of IP bits, the number of active bodes
+ * and a marker whether the tree is *frozen* or not.
  *
  * Attributes:
- *     head (patricia_node_t*): Pointer to the top-most sentinel entry node of the bitwise matrix.
- *     maxbits (uint32_t): The absolute maximum bit depth permissible for key traversal operations
- *     (e.g., 32 for IPv4 strings, 128 for IPv6 configurations).
- *     num_active_node (int): Running tracking metric counting the total quantity of populated,
- *     valid node elements currently stored inside the tree structure.
- *     frozen (uint16_t): A configuration bitmask toggle flag (1 or 0) used to freeze the tree layout,
- *     preventing subsequent node insertions, deletions, or structural modifications.
  */
 typedef struct patricia_tree_tag {
-   patricia_node_t 	*head;
-   uint32_t		maxbits;
-   int num_active_node;
-   uint16_t frozen;
+    /** Pointer to the top-most tree node */
+    patricia_node_t 	*head;
+
+    /** Max number of bits per network IP address */
+    uint32_t		maxbits;
+
+    /** Tracks total number of populated nodes */
+    int num_active_node;
+
+    /** Marks the tree as frozen or not */
+    uint16_t frozen;
 } patricia_tree_t;
 
 
