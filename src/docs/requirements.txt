@@ -6,5 +6,5 @@ sphinx-rtd-theme
 # Note: when changing ubuntu in readthedocs - will need to change clang 
 #
 hawkmoth
-clang<19.0
+clang>=21.0,<22.0
 
