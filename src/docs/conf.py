@@ -4,17 +4,11 @@
 
 import os
 import sys
-import ctypes.util
 
 if os.environ.get('READTHEDOCS') == 'True':
-    from clang.cindex import Config
-
-    lib_path = ctypes.util.find_library('clang')
-    if lib_path:
-        Config.set_library_file(lib_path)
-    else:
-        from hawkmoth.util import readthedocs
-        readthedocs.clang_setup()
+    #from clang.cindex import Config
+    from hawkmoth.util import readthedocs
+    readthedocs.clang_setup()
 
     ## Try system libclang shared library path directly
     #libclang_paths = [
