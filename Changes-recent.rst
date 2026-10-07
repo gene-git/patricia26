@@ -1,6 +1,10 @@
 Recent Changes
 ==============
 
+**1.4.2**
+
+* Finally sorted out the readthedoc quirks with clang/hawkmoth
+
 **1.4.1**
 
 * Documentation

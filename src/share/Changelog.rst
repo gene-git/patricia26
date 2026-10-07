@@ -6,12 +6,30 @@ Tags
 
 .. code-block:: text
 
-	0.9.0 (2026-07-27) -> 1.4.1 (2026-10-07)
-	13 commits.
+	0.9.0 (2026-07-27) -> 1.4.2 (2026-10-07)
+	20 commits.
 
 Commits
 =======
 
+
+* 2026-10-07  : **1.4.2**
+
+.. code-block:: text
+
+              - **1.4.2**
+                * Finally sorted out the readthedoc quirks with clang/hawkmoth
+
+* 2026-10-07  : **HEAD**
+
+.. code-block:: text
+
+              - readthedocs - attempt num N
+              - readthedocs is very fussy about versions for some reason
+              - readthedocs - try simplifying the hawkmoth clang library relationship
+              - readthedocs continued - clang lib version issues
+              - readthedocs: add clang as well
+              - update the clang version for readthedocs
 
 * 2026-10-07  : **1.4.1**
 
@@ -22,7 +40,7 @@ Commits
                   * Improve the struct docs
                   * Make available on readthedocs https://patricia26.readthedocs.io
 
-* 2026-09-12  : **1.4.0, origin/master, origin/HEAD**
+* 2026-09-12  : **1.4.0**
 
 .. code-block:: text
 
