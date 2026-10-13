@@ -6,24 +6,27 @@ Tags
 
 .. code-block:: text
 
-	0.9.0 (2026-07-27) -> 1.4.2 (2026-10-07)
-	20 commits.
+	0.9.0 (2026-07-27) -> 1.5.0 (2026-10-13)
+	21 commits.
 
 Commits
 =======
 
 
-* 2026-10-07  : **1.4.2**
+* 2026-10-13  : **1.5.0**
+
+.. code-block:: text
+
+              - **1.5.0**
+                * Fix systemd-nspawn / chroot builds to run tests out of the build directory.
+                  Thanks to @Archanoid for reporting this on the AUR.
+
+* 2026-10-07  : **1.4.2, origin/master, origin/HEAD**
 
 .. code-block:: text
 
               - **1.4.2**
                 * Finally sorted out the readthedoc quirks with clang/hawkmoth
-
-* 2026-10-07  : **HEAD**
-
-.. code-block:: text
-
               - readthedocs - attempt num N
               - readthedocs is very fussy about versions for some reason
               - readthedocs - try simplifying the hawkmoth clang library relationship

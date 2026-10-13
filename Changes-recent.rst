@@ -1,6 +1,11 @@
 Recent Changes
 ==============
 
+**1.5.0**
+
+* Fix systemd-nspawn / chroot builds to run tests out of the build directory.
+  Thanks to @Archanoid for reporting this on the AUR.
+
 **1.4.2**
 
 * Finally sorted out the readthedoc quirks with clang/hawkmoth

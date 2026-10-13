@@ -12,7 +12,7 @@ SOURCES = conf.py ../version.txt Readme.rst Makefile
 SOURCES += c-api.rst index.rst python-api.rst pytricia-migrate.rst
 SOURCES += stubs/patricia26.py lib/patricia.c lib/patricia.h
 
-.PHONY: help Makefil clean html latexpdf
+.PHONY: help clean html latexpdf
 
 HTML_EXCL = --exclude _sources/ --exclude .buildinfo  --exclude .doctrees/ --exclude .buildinfo.bak
 

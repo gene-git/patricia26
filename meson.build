@@ -139,6 +139,9 @@ py = py_mod.find_installation(pure: false)
 cython_args = []
 py_dep = py.dependency(embed: true)
 
+#
+# C-code
+# 
 inc_dir = []
 lib_sources = []
 subdir('src/patricia26')
@@ -218,8 +221,8 @@ subdir('src/python')
 py.install_sources(
   [
     'src/stubs/patricia26.pyi',
-    'src/python/py.typed',
-    'src/python/__init__.py',
+    'src/python/patricia26/py.typed',
+    'src/python/patricia26/__init__.py',
   ],
   subdir: 'patricia26',
 )
@@ -235,8 +238,8 @@ else
   build_root = meson.project_build_root()
 
   test_env = environment()
-  test_env.prepend('PYTHONPATH', build_root / 'src/python')
-  test_env.prepend('LD_LIBRARY_PATH', meson.project_build_root())
+  test_env.prepend('PYTHONPATH', build_root / 'src' / 'python')
+  test_env.prepend('LD_LIBRARY_PATH', build_root)
 
   testdir = proj_root / 'src/tests'
 
